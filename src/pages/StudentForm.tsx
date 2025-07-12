@@ -1,0 +1,339 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Card,
+  CardContent,
+  Alert,
+  CircularProgress,
+  MenuItem,
+} from '@mui/material';
+import { ArrowBack as ArrowBackIcon, Save as SaveIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { studentAPI, teacherAPI, Student, Teacher } from '../services/api';
+
+const StudentForm = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [teachersLoading, setTeachersLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [formData, setFormData] = useState<Student>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    dateOfBirth: '',
+    instrument: '',
+    skillLevel: 'BEGINNER',
+    parentName: '',
+    parentPhone: '',
+    notes: '',
+    teacherId: 0,
+  });
+
+  const instruments = [
+    'Gitar',
+    'Piyano',
+    'Keman',
+    'Davul',
+    'Flüt',
+    'Saksafon',
+    'Viyola',
+    'Çello',
+    'Kontrbas',
+    'Arp',
+    'Org',
+    'Akordeon',
+    'Klarnet',
+    'Trompet',
+    'Trombon',
+    'Vokal',
+  ];
+
+  const skillLevels = [
+    { value: 'BEGINNER', label: 'Başlangıç' },
+    { value: 'INTERMEDIATE', label: 'Orta' },
+    { value: 'ADVANCED', label: 'İleri' },
+    { value: 'EXPERT', label: 'Uzman' },
+  ];
+
+  useEffect(() => {
+    fetchTeachers();
+  }, []);
+
+  const fetchTeachers = async () => {
+    try {
+      setTeachersLoading(true);
+      const response = await teacherAPI.getAll();
+      setTeachers(response.data);
+    } catch (err) {
+      setError('Öğretmenler yüklenirken bir hata oluştu');
+      console.error('Fetch teachers error:', err);
+    } finally {
+      setTeachersLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof Student, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const validateForm = (): boolean => {
+    if (!formData.firstName.trim()) {
+      setError('Ad alanı zorunludur');
+      return false;
+    }
+    if (!formData.lastName.trim()) {
+      setError('Soyad alanı zorunludur');
+      return false;
+    }
+    if (!formData.email.trim()) {
+      setError('E-posta alanı zorunludur');
+      return false;
+    }
+    if (!formData.phoneNumber.trim()) {
+      setError('Telefon alanı zorunludur');
+      return false;
+    }
+    if (!formData.dateOfBirth) {
+      setError('Doğum tarihi zorunludur');
+      return false;
+    }
+    if (!formData.instrument.trim()) {
+      setError('Enstrüman alanı zorunludur');
+      return false;
+    }
+    if (!formData.parentName.trim()) {
+      setError('Veli adı zorunludur');
+      return false;
+    }
+    if (!formData.parentPhone.trim()) {
+      setError('Veli telefonu zorunludur');
+      return false;
+    }
+    if (!formData.teacherId) {
+      setError('Öğretmen seçimi zorunludur');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await studentAPI.create(formData);
+      navigate('/students');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Öğrenci eklenirken bir hata oluştu');
+      console.error('Create student error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (teachersLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Box display="flex" alignItems="center" mb={3}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/students')}
+          sx={{ mr: 2 }}
+        >
+          Geri
+        </Button>
+        <Typography variant="h4">
+          Yeni Öğrenci Ekle
+        </Typography>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Card>
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <Box display="flex" flexDirection="column" gap={3}>
+              {/* Öğrenci Bilgileri */}
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Öğrenci Bilgileri
+                </Typography>
+              </Box>
+              <Box display="flex" gap={2}>
+                <TextField
+                  fullWidth
+                  label="Ad *"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Soyad *"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  required
+                />
+              </Box>
+              <Box display="flex" gap={2}>
+                <TextField
+                  fullWidth
+                  label="E-posta *"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Telefon *"
+                  value={formData.phoneNumber}
+                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                  required
+                  placeholder="0555-123-4567"
+                />
+              </Box>
+              <Box display="flex" gap={2}>
+                <TextField
+                  fullWidth
+                  label="Doğum Tarihi *"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                  required
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  select
+                  fullWidth
+                  label="Enstrüman *"
+                  value={formData.instrument}
+                  onChange={(e) => handleInputChange('instrument', e.target.value)}
+                  required
+                >
+                  {instruments.map((instrument) => (
+                    <MenuItem key={instrument} value={instrument}>
+                      {instrument}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+              <Box display="flex" gap={2}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Seviye *"
+                  value={formData.skillLevel}
+                  onChange={(e) => handleInputChange('skillLevel', e.target.value)}
+                  required
+                >
+                  {skillLevels.map((level) => (
+                    <MenuItem key={level.value} value={level.value}>
+                      {level.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  fullWidth
+                  label="Öğretmen *"
+                  value={formData.teacherId}
+                  onChange={(e) => handleInputChange('teacherId', parseInt(e.target.value))}
+                  required
+                >
+                  {teachers.map((teacher) => (
+                    <MenuItem key={teacher.id} value={teacher.id}>
+                      {teacher.firstName} {teacher.lastName} - {teacher.instrument}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+
+              {/* Veli Bilgileri */}
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Veli Bilgileri
+                </Typography>
+              </Box>
+              <Box display="flex" gap={2}>
+                <TextField
+                  fullWidth
+                  label="Veli Adı *"
+                  value={formData.parentName}
+                  onChange={(e) => handleInputChange('parentName', e.target.value)}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Veli Telefonu *"
+                  value={formData.parentPhone}
+                  onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                  required
+                  placeholder="0555-123-4567"
+                />
+              </Box>
+
+              {/* Notlar */}
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Notlar"
+                  multiline
+                  rows={4}
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  placeholder="Öğrenci hakkında notlar..."
+                />
+              </Box>
+
+              {/* Butonlar */}
+              <Box display="flex" gap={2} justifyContent="flex-end">
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/students')}
+                  disabled={loading}
+                >
+                  İptal
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+                  disabled={loading}
+                >
+                  {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                </Button>
+              </Box>
+            </Box>
+          </form>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+};
+
+export default StudentForm; 
