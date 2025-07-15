@@ -23,6 +23,7 @@ interface ScheduleFiltersProps {
     lessonType: string | null;
     dayOfWeek: string | null;
   }) => void;
+  lessonTypes: { id: number; value: string; label: string }[];
 }
 
 const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
@@ -33,17 +34,8 @@ const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
   selectedLessonType,
   selectedDay,
   onFilterChange,
+  lessonTypes,
 }) => {
-  const lessonTypes = [
-    { value: 'PIANO', label: 'Piyano' },
-    { value: 'GUITAR', label: 'Gitar' },
-    { value: 'VIOLIN', label: 'Keman' },
-    { value: 'DRUMS', label: 'Davul' },
-    { value: 'VOICE', label: 'Ses' },
-    { value: 'FLUTE', label: 'Flüt' },
-    { value: 'OTHER', label: 'Diğer' },
-  ];
-
   const weekDays = [
     { value: 'MONDAY', label: 'Pazartesi' },
     { value: 'TUESDAY', label: 'Salı' },
@@ -110,7 +102,7 @@ const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
           >
             <MenuItem value="">Tümü</MenuItem>
             {lessonTypes.map((type) => (
-              <MenuItem key={type.value} value={type.value}>
+              <MenuItem key={type.id} value={type.value}>
                 {type.label}
               </MenuItem>
             ))}

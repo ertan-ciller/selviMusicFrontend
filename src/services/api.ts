@@ -128,6 +128,7 @@ export interface LessonSchedule {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+  classroomId: number; // <-- EKLENDİ
 }
 
 // Lesson Attendance Types
@@ -424,6 +425,15 @@ export const lessonPricingAPI = {
   update: (id: number, pricing: CreateLessonPricingRequest) => api.put<LessonPricing>(`/lesson-pricings/${id}`, pricing),
   delete: (id: number) => api.delete(`/lesson-pricings/${id}`),
   deactivateByLessonTypeId: (lessonTypeId: number) => api.delete(`/lesson-pricings/lesson-type/${lessonTypeId}/deactivate`),
+};
+
+export interface Classroom {
+  id: number;
+  name: string;
+}
+
+export const classroomAPI = {
+  getAll: () => api.get<Classroom[]>('/classrooms'),
 };
 
 export default api; 

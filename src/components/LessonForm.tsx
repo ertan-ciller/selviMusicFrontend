@@ -12,7 +12,7 @@ import {
   MenuItem,
   Box,
 } from '@mui/material';
-import { LessonSchedule, Teacher, Student } from '../services/api';
+import { LessonSchedule, Teacher, Student, Classroom } from '../services/api';
 
 interface LessonFormProps {
   open: boolean;
@@ -21,6 +21,8 @@ interface LessonFormProps {
   schedule?: LessonSchedule | null;
   teachers: Teacher[];
   students: Student[];
+  lessonTypes: { id: number; value: string; label: string }[];
+  classrooms: Classroom[];
 }
 
 const LessonForm: React.FC<LessonFormProps> = ({
@@ -30,6 +32,8 @@ const LessonForm: React.FC<LessonFormProps> = ({
   schedule,
   teachers,
   students,
+  lessonTypes,
+  classrooms,
 }) => {
   const [formData, setFormData] = useState<Partial<LessonSchedule>>({
     studentId: 0,
@@ -40,6 +44,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
     endTime: '09:45',
     isActive: true,
     notes: '',
+    classroomId: 0,
   });
 
   useEffect(() => {
@@ -53,6 +58,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
         endTime: schedule.endTime,
         isActive: schedule.isActive,
         notes: schedule.notes || '',
+        classroomId: schedule.classroomId,
       });
     } else {
       setFormData({
@@ -64,6 +70,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
         endTime: '09:45',
         isActive: true,
         notes: '',
+        classroomId: 0,
       });
     }
   }, [schedule]);
@@ -76,18 +83,19 @@ const LessonForm: React.FC<LessonFormProps> = ({
   };
 
   const handleChange = (field: keyof LessonSchedule, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'lessonType') {
+      const selected = lessonTypes.find(t => t.value === value);
+      setFormData(prev => ({
+        ...prev,
+        lessonType: value,
+        lessonTypeId: selected ? selected.id : undefined,
+      }));
+    } else if (field === 'classroomId') {
+      setFormData(prev => ({ ...prev, classroomId: value }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
-
-  const lessonTypes = [
-    { value: 'PIANO', label: 'Piyano' },
-    { value: 'GUITAR', label: 'Gitar' },
-    { value: 'VIOLIN', label: 'Keman' },
-    { value: 'DRUMS', label: 'Davul' },
-    { value: 'VOICE', label: 'Ses' },
-    { value: 'FLUTE', label: 'Flüt' },
-    { value: 'OTHER', label: 'Diğer' },
-  ];
 
   const weekDays = [
     { value: 'MONDAY', label: 'Pazartesi' },
@@ -170,6 +178,22 @@ const LessonForm: React.FC<LessonFormProps> = ({
                     {weekDays.map((day) => (
                       <MenuItem key={day.value} value={day.value}>
                         {day.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 250 }}>
+                <FormControl fullWidth required>
+                  <InputLabel>Derslik</InputLabel>
+                  <Select
+                    value={formData.classroomId || ''}
+                    onChange={(e) => handleChange('classroomId', e.target.value)}
+                    label="Derslik"
+                  >
+                    {classrooms.map((cls) => (
+                      <MenuItem key={cls.id} value={cls.id}>
+                        {cls.name}
                       </MenuItem>
                     ))}
                   </Select>

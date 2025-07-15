@@ -37,12 +37,15 @@ import {
 } from '@mui/icons-material';
 import { format, startOfWeek, addWeeks, subWeeks, eachDayOfInterval } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { lessonScheduleAPI, teacherAPI, studentAPI, lessonAttendanceAPI, LessonSchedule, Teacher, Student, LessonAttendance, CreateLessonAttendanceRequest } from '../services/api';
+import { lessonScheduleAPI, teacherAPI, studentAPI, lessonAttendanceAPI, LessonSchedule, Teacher, Student, LessonAttendance, CreateLessonAttendanceRequest, lessonTypeAPI, classroomAPI, Classroom } from '../services/api';
 import LessonForm from '../components/LessonForm';
 import ScheduleFilters from '../components/ScheduleFilters';
 import ScheduleStats from '../components/ScheduleStats';
 
 const Schedule: React.FC = () => {
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [selectedClassroom, setSelectedClassroom] = useState<number>(0);
+
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [schedules, setSchedules] = useState<LessonSchedule[]>([]);
   const [filteredSchedules, setFilteredSchedules] = useState<LessonSchedule[]>([]);
@@ -68,8 +71,21 @@ const Schedule: React.FC = () => {
   const weekDays = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
   const dayKeys = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const;
 
+  const [lessonTypes, setLessonTypes] = useState<any[]>([]);
+
   useEffect(() => {
     loadData();
+    lessonTypeAPI.getAll().then(res => {
+      setLessonTypes(res.data.map((lt: any) => ({
+        id: lt.id,
+        value: lt.name,
+        label: lt.name // veya lt.description varsa: lt.description || lt.name
+      })));
+    });
+    classroomAPI.getAll().then(res => {
+      setClassrooms(res.data);
+      if (res.data.length > 0) setSelectedClassroom(res.data[0].id);
+    });
   }, []);
 
   useEffect(() => {
@@ -81,7 +97,7 @@ const Schedule: React.FC = () => {
       setLoading(true);
       const [schedulesRes, teachersRes, studentsRes, attendancesRes] = await Promise.all([
         lessonScheduleAPI.getAll(),
-        teacherAPI.getAll(),
+        teacherAPI.getAll(), 
         studentAPI.getAll(),
         lessonAttendanceAPI.getAll(),
       ]);
@@ -143,8 +159,11 @@ const Schedule: React.FC = () => {
     setCurrentWeek(new Date());
   };
 
-  const getSchedulesForDay = (dayKey: string) => {
-    return filteredSchedules.filter(schedule => schedule.dayOfWeek === dayKey && schedule.isActive);
+  // getSchedulesForDay fonksiyonunu güncelle
+  const getSchedulesForDay = (dayKey: string, classroomId: number) => {
+    return filteredSchedules.filter(
+      schedule => schedule.dayOfWeek === dayKey && schedule.isActive && schedule.classroomId === classroomId
+    );
   };
 
   const getTeacherName = (teacherId: number) => {
@@ -194,11 +213,17 @@ const Schedule: React.FC = () => {
 
   const handleFormSubmit = async (schedule: LessonSchedule) => {
     try {
+      let lessonTypeId = schedule.lessonTypeId;
+      if (!lessonTypeId && schedule.lessonType) {
+        const found = lessonTypes.find(t => t.value === schedule.lessonType);
+        lessonTypeId = found ? found.id : 0;
+      }
+      const scheduleWithTypeId = { ...schedule, lessonTypeId };
       if (editingSchedule) {
-        await lessonScheduleAPI.update(editingSchedule.id!, schedule);
+        await lessonScheduleAPI.update(editingSchedule.id!, scheduleWithTypeId);
         setSnackbar({ open: true, message: 'Ders başarıyla güncellendi', severity: 'success' });
       } else {
-        await lessonScheduleAPI.create(schedule);
+        await lessonScheduleAPI.create(scheduleWithTypeId);
         setSnackbar({ open: true, message: 'Ders başarıyla eklendi', severity: 'success' });
       }
       setOpenForm(false);
@@ -284,74 +309,10 @@ const Schedule: React.FC = () => {
     end: addWeeks(weekStart, 1),
   });
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography>Yükleniyor...</Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Haftalık Ders Programı
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddLesson}
-          sx={{ borderRadius: 2 }}
-        >
-          Yeni Ders Ekle
-        </Button>
-      </Box>
-
-      {/* Statistics */}
-      <ScheduleStats
-        schedules={schedules}
-        teachers={teachers}
-        students={students}
-      />
-
-      {/* Filters */}
-      <ScheduleFilters
-        teachers={teachers}
-        students={students}
-        selectedTeacher={selectedTeacher}
-        selectedStudent={selectedStudent}
-        selectedLessonType={selectedLessonType}
-        selectedDay={selectedDay}
-        onFilterChange={handleFilterChange}
-      />
-
-      {/* Week Navigation */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <IconButton onClick={handlePreviousWeek}>
-            <ChevronLeftIcon />
-          </IconButton>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h6">
-              {format(weekStart, 'dd MMMM yyyy', { locale: tr })} - {format(addWeeks(weekStart, 1), 'dd MMMM yyyy', { locale: tr })}
-            </Typography>
-            <Button
-              variant="outlined"
-              startIcon={<TodayIcon />}
-              onClick={handleToday}
-              size="small"
-            >
-              Bugün
-            </Button>
-          </Box>
-          <IconButton onClick={handleNextWeek}>
-            <ChevronRightIcon />
-          </IconButton>
-        </Box>
-      </Paper>
-
-      {/* Calendar Grid */}
+  // Haftalık grid renderını fonksiyona al
+  const renderWeeklyGrid = (classroom: { id: number; name: string }) => (
+    <Box key={classroom.id} sx={{ mb: 6 }}>
+      <Typography variant="h5" sx={{ mb: 2 }}>{classroom.name}</Typography>
       <Box sx={{ display: 'flex', gap: 2 }}>
         {/* Time slots column */}
         <Box sx={{ display: { xs: 'none', md: 'block' }, width: 90, flexShrink: 0 }}>
@@ -374,7 +335,6 @@ const Schedule: React.FC = () => {
             </Box>
           ))}
         </Box>
-
         {/* Days columns */}
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1 }}>
           {dayKeys.map((dayKey, dayIndex) => (
@@ -406,19 +366,15 @@ const Schedule: React.FC = () => {
                     {format(weekDates[dayIndex], 'dd MMM', { locale: tr })}
                   </Typography>
                 </Box>
-
                 {/* Time slots */}
                 <Box sx={{ position: 'relative' }}>
                   {Array.from({ length: 12 }, (_, timeSlot) => {
                     const hour = timeSlot + 8;
-                    
                     const timeString = `${hour.toString().padStart(2, '0')}:00`;
-                    const daySchedules = getSchedulesForDay(dayKey);
+                    const daySchedules = getSchedulesForDay(dayKey, classroom.id);
                     const scheduleForThisTime = daySchedules.find(
                       schedule => schedule.startTime.slice(0, 5) === timeString
                     );
-                    
-
                     return (
                       <Box
                         key={timeSlot}
@@ -445,7 +401,6 @@ const Schedule: React.FC = () => {
                         >
                           {timeString}
                         </Typography>
-                        
                         {scheduleForThisTime && (
                           <Card
                             sx={{
@@ -489,7 +444,6 @@ const Schedule: React.FC = () => {
                               >
                                 {scheduleForThisTime.startTime.slice(0, 5)} - {scheduleForThisTime.endTime.slice(0, 5)}
                               </Typography>
-                              
                               {/* Attendance Status */}
                               {(() => {
                                 const attendanceStatus = getAttendanceStatus(scheduleForThisTime.id!, weekDates[dayIndex]);
@@ -507,7 +461,6 @@ const Schedule: React.FC = () => {
                                   />
                                 ) : null;
                               })()}
-                              
                               <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
                                 {/* Attendance Buttons */}
                                 <Tooltip title="Dersi Tamamla">
@@ -555,7 +508,6 @@ const Schedule: React.FC = () => {
                                     <PersonOffIcon />
                                   </IconButton>
                                 </Tooltip>
-                                
                                 {/* Edit and Delete Buttons */}
                                 <Tooltip title="Düzenle">
                                   <IconButton
@@ -600,7 +552,94 @@ const Schedule: React.FC = () => {
           ))}
         </Box>
       </Box>
+    </Box>
+  );
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography>Yükleniyor...</Typography>
+      </Box>
+    );
+  }
+
+  // Debug için eklenen loglar
+  console.log("Teachers state:", teachers);
+  console.log("Students state:", students);
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          Haftalık Ders Programı
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleAddLesson}
+          sx={{ borderRadius: 2 }}
+        >
+          Yeni Ders Ekle
+        </Button>
+      </Box>
+      
+      {/* Statistics */}
+      <ScheduleStats
+        key={teachers.length + '-' + students.length}
+        schedules={schedules}
+        teachers={teachers}
+        students={students}
+      />
+      {/* Filters */}
+      <ScheduleFilters
+        teachers={teachers}
+        students={students}
+        selectedTeacher={selectedTeacher}
+        selectedStudent={selectedStudent}
+        selectedLessonType={selectedLessonType}
+        selectedDay={selectedDay}
+        onFilterChange={handleFilterChange}
+        lessonTypes={lessonTypes}
+      />
+      {/* Derslik seçimi */}
+      <FormControl size="small" sx={{ minWidth: 180, mb: 2 }}>
+        <InputLabel>Derslik Seç</InputLabel>
+        <Select
+          value={selectedClassroom}
+          label="Derslik Seç"
+          onChange={e => setSelectedClassroom(Number(e.target.value))}
+        >
+          {classrooms.map(cls => (
+            <MenuItem key={cls.id} value={cls.id}>{cls.name}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      {/* Week Navigation */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <IconButton onClick={handlePreviousWeek}>
+            <ChevronLeftIcon />
+          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h6">
+              {format(weekStart, 'dd MMMM yyyy', { locale: tr })} - {format(addWeeks(weekStart, 1), 'dd MMMM yyyy', { locale: tr })}
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<TodayIcon />}
+              onClick={handleToday}
+              size="small"
+            >
+              Bugün
+            </Button>
+          </Box>
+          <IconButton onClick={handleNextWeek}>
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+      </Paper>
+      {/* Sadece seçili dersliğin haftalık gridini göster */}
+      {classrooms.find(cls => cls.id === selectedClassroom) && renderWeeklyGrid(classrooms.find(cls => cls.id === selectedClassroom)!)}
       {/* Lesson Form Dialog */}
       <LessonForm
         open={openForm}
@@ -609,8 +648,9 @@ const Schedule: React.FC = () => {
         schedule={editingSchedule}
         teachers={teachers}
         students={students}
+        lessonTypes={lessonTypes}
+        classrooms={classrooms}
       />
-
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
@@ -625,7 +665,6 @@ const Schedule: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       {/* Floating Action Button */}
       <Fab
         color="primary"
