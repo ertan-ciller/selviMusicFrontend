@@ -158,6 +158,77 @@ export interface WeeklySchedule {
   sunday: LessonSchedule[];
 }
 
+// Financial Transaction Types
+export interface FinancialTransaction {
+  id?: number;
+  transactionDate: string; // ISO date string
+  amount: number;
+  transactionType: 'INCOME' | 'EXPENSE';
+  category: 'LESSON_INCOME' | 'PRODUCT_SALE' | 'MONTHLY_PAYMENT' | 'OTHER_INCOME' | 
+           'TEACHER_COMMISSION' | 'RENT' | 'UTILITIES' | 'EQUIPMENT' | 'MAINTENANCE' | 
+           'SALARY' | 'MARKETING' | 'OTHER_EXPENSE';
+  description: string;
+  referenceId?: number;
+  referenceType?: 'LESSON_ATTENDANCE' | 'SALE' | 'LESSON_PAYMENT' | 'MANUAL_ENTRY';
+  studentId?: number;
+  studentName?: string;
+  teacherId?: number;
+  teacherName?: string;
+  paymentMethod?: 'CASH' | 'CREDIT_CARD' | 'BANK_TRANSFER' | 'CHECK';
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateFinancialTransactionRequest {
+  transactionDate: string;
+  amount: number;
+  transactionType: 'INCOME' | 'EXPENSE';
+  category: string;
+  description: string;
+  referenceId?: number;
+  referenceType?: string;
+  studentId?: number;
+  teacherId?: number;
+  paymentMethod?: string;
+  notes?: string;
+}
+
+// Lesson Type Types
+export interface LessonType {
+  id?: number;
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Lesson Pricing Types
+export interface LessonPricing {
+  id?: number;
+  lessonTypeId: number;
+  lessonTypeName?: string;
+  studentPrice: number;
+  teacherCommission: number;
+  musicSchoolShare: number;
+  isActive: boolean;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateLessonPricingRequest {
+  lessonTypeId: number;
+  studentPrice: number;
+  teacherCommission: number;
+  musicSchoolShare: number;
+  effectiveFrom: string;
+  effectiveTo?: string;
+}
+
 // Teacher API
 export const teacherAPI = {
   getAll: () => api.get<Teacher[]>('/teachers'),
@@ -277,20 +348,82 @@ export const lessonScheduleAPI = {
 
 // Lesson Attendance API
 export const lessonAttendanceAPI = {
-  getAll: () => api.get<LessonAttendance[]>('/lesson-attendances'),
-  getById: (id: number) => api.get<LessonAttendance>(`/lesson-attendances/${id}`),
+  getAll: () => api.get<LessonAttendance[]>('/lesson_attendances'),
+  getById: (id: number) => api.get<LessonAttendance>(`/lesson_attendances/${id}`),
   getByScheduleId: (lessonScheduleId: number) => 
-    api.get<LessonAttendance[]>(`/lesson-attendances/schedule/${lessonScheduleId}`),
+    api.get<LessonAttendance[]>(`/lesson_attendances/schedule/${lessonScheduleId}`),
   getByStudentIdAndDateRange: (studentId: number, startDate: string, endDate: string) => 
-    api.get<LessonAttendance[]>(`/lesson-attendances/student/${studentId}?startDate=${startDate}&endDate=${endDate}`),
+    api.get<LessonAttendance[]>(`/lesson_attendances/student/${studentId}?startDate=${startDate}&endDate=${endDate}`),
   getByTeacherIdAndDateRange: (teacherId: number, startDate: string, endDate: string) => 
-    api.get<LessonAttendance[]>(`/lesson-attendances/teacher/${teacherId}?startDate=${startDate}&endDate=${endDate}`),
+    api.get<LessonAttendance[]>(`/lesson_attendances/teacher/${teacherId}?startDate=${startDate}&endDate=${endDate}`),
   getByDateRange: (startDate: string, endDate: string) => 
-    api.get<LessonAttendance[]>(`/lesson-attendances/date-range?startDate=${startDate}&endDate=${endDate}`),
-  create: (request: CreateLessonAttendanceRequest) => api.post<LessonAttendance>('/lesson-attendances', request),
+    api.get<LessonAttendance[]>(`/lesson_attendances/date-range?startDate=${startDate}&endDate=${endDate}`),
+  create: (request: CreateLessonAttendanceRequest) => api.post<LessonAttendance>('/lesson_attendances', request),
   update: (id: number, request: CreateLessonAttendanceRequest) => 
-    api.put<LessonAttendance>(`/lesson-attendances/${id}`, request),
-  delete: (id: number) => api.delete(`/lesson-attendances/${id}`),
+    api.put<LessonAttendance>(`/lesson_attendances/${id}`, request),
+  delete: (id: number) => api.delete(`/lesson_attendances/${id}`),
+};
+
+// Financial Transaction API
+export const financialTransactionAPI = {
+  getAll: () => api.get<FinancialTransaction[]>('/financial-transactions'),
+  getById: (id: number) => api.get<FinancialTransaction>(`/financial-transactions/${id}`),
+  getByDateRange: (startDate: string, endDate: string) => 
+    api.get<FinancialTransaction[]>(`/financial-transactions/date-range?startDate=${startDate}&endDate=${endDate}`),
+  getByType: (transactionType: FinancialTransaction['transactionType']) => 
+    api.get<FinancialTransaction[]>(`/financial-transactions/type/${transactionType}`),
+  getByCategory: (category: FinancialTransaction['category']) => 
+    api.get<FinancialTransaction[]>(`/financial-transactions/category/${category}`),
+  getByStudentId: (studentId: number) => 
+    api.get<FinancialTransaction[]>(`/financial-transactions/student/${studentId}`),
+  getByTeacherId: (teacherId: number) => 
+    api.get<FinancialTransaction[]>(`/financial-transactions/teacher/${teacherId}`),
+  create: (transaction: CreateFinancialTransactionRequest) => 
+    api.post<FinancialTransaction>('/financial-transactions', transaction),
+  update: (id: number, transaction: CreateFinancialTransactionRequest) => 
+    api.put<FinancialTransaction>(`/financial-transactions/${id}`, transaction),
+  delete: (id: number) => api.delete(`/financial-transactions/${id}`),
+  
+  // Raporlama
+  getTotalIncome: (startDate: string, endDate: string) => 
+    api.get<number>(`/financial-transactions/reports/total-income?startDate=${startDate}&endDate=${endDate}`),
+  getTotalExpense: (startDate: string, endDate: string) => 
+    api.get<number>(`/financial-transactions/reports/total-expense?startDate=${startDate}&endDate=${endDate}`),
+  getNetIncome: (startDate: string, endDate: string) => 
+    api.get<number>(`/financial-transactions/reports/net-income?startDate=${startDate}&endDate=${endDate}`),
+  getTeacherCommission: (teacherId: number, startDate: string, endDate: string) => 
+    api.get<number>(`/financial-transactions/reports/teacher-commission/${teacherId}?startDate=${startDate}&endDate=${endDate}`),
+  
+  // Manuel işlemler
+  createManualExpense: (transaction: CreateFinancialTransactionRequest) => 
+    api.post<FinancialTransaction>('/financial-transactions/manual-expense', transaction),
+  createManualIncome: (transaction: CreateFinancialTransactionRequest) => 
+    api.post<FinancialTransaction>('/financial-transactions/manual-income', transaction),
+};
+
+// Lesson Type API
+export const lessonTypeAPI = {
+  getAll: () => api.get<LessonType[]>('/lesson-types'),
+  getActive: () => api.get<LessonType[]>('/lesson-types/active'),
+  getById: (id: number) => api.get<LessonType>(`/lesson-types/${id}`),
+  create: (lessonType: LessonType) => api.post<LessonType>('/lesson-types', lessonType),
+  update: (id: number, lessonType: LessonType) => api.put<LessonType>(`/lesson-types/${id}`, lessonType),
+  delete: (id: number) => api.delete(`/lesson-types/${id}`),
+};
+
+// Lesson Pricing API
+export const lessonPricingAPI = {
+  getAll: () => api.get<LessonPricing[]>('/lesson-pricings'),
+  getById: (id: number) => api.get<LessonPricing>(`/lesson-pricings/${id}`),
+  getActive: () => api.get<LessonPricing[]>('/lesson-pricings/active'),
+  getByLessonTypeId: (lessonTypeId: number) => api.get<LessonPricing[]>(`/lesson-pricings/lesson-type/${lessonTypeId}`),
+  getActiveByLessonTypeId: (lessonTypeId: number) => api.get<LessonPricing[]>(`/lesson-pricings/lesson-type/${lessonTypeId}/active`),
+  getByMinPrice: (minPrice: number) => api.get<LessonPricing[]>(`/lesson-pricings/min-price/${minPrice}`),
+  getByMaxPrice: (maxPrice: number) => api.get<LessonPricing[]>(`/lesson-pricings/max-price/${maxPrice}`),
+  create: (pricing: CreateLessonPricingRequest) => api.post<LessonPricing>('/lesson-pricings', pricing),
+  update: (id: number, pricing: CreateLessonPricingRequest) => api.put<LessonPricing>(`/lesson-pricings/${id}`, pricing),
+  delete: (id: number) => api.delete(`/lesson-pricings/${id}`),
+  deactivateByLessonTypeId: (lessonTypeId: number) => api.delete(`/lesson-pricings/lesson-type/${lessonTypeId}/deactivate`),
 };
 
 export default api; 
