@@ -75,18 +75,34 @@ const Schedule: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    lessonTypeAPI.getAll().then(res => {
+    loadLessonTypes();
+    loadClassrooms();
+  }, []);
+
+  const loadLessonTypes = async () => {
+    try {
+      const res = await lessonTypeAPI.getAll();
       setLessonTypes(res.data.map((lt: any) => ({
         id: lt.id,
         value: lt.name,
-        label: lt.name // veya lt.description varsa: lt.description || lt.name
+        label: lt.name
       })));
-    });
-    classroomAPI.getAll().then(res => {
+    } catch (err) {
+      console.error('Error loading lesson types:', err);
+      setLessonTypes([]);
+    }
+  };
+
+  const loadClassrooms = async () => {
+    try {
+      const res = await classroomAPI.getAll();
       setClassrooms(res.data);
       if (res.data.length > 0) setSelectedClassroom(res.data[0].id);
-    });
-  }, []);
+    } catch (err) {
+      console.error('Error loading classrooms:', err);
+      setClassrooms([]);
+    }
+  };
 
   useEffect(() => {
     applyFilters();
@@ -563,9 +579,7 @@ const Schedule: React.FC = () => {
     );
   }
 
-  // Debug için eklenen loglar
-  console.log("Teachers state:", teachers);
-  console.log("Students state:", students);
+
 
   return (
     <Box sx={{ p: 3 }}>

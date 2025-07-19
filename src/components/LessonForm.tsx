@@ -124,11 +124,15 @@ const LessonForm: React.FC<LessonFormProps> = ({
                     onChange={(e) => handleChange('studentId', e.target.value)}
                     label="Öğrenci"
                   >
-                    {students.map((student) => (
-                      <MenuItem key={student.id} value={student.id}>
-                        {student.firstName} {student.lastName}
-                      </MenuItem>
-                    ))}
+                    {students && students.length > 0 ? (
+                      students.map((student) => (
+                        <MenuItem key={student.id} value={student.id}>
+                          {student.firstName} {student.lastName}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem disabled>Öğrenci bulunamadı</MenuItem>
+                    )}
                   </Select>
                 </FormControl>
               </Box>
@@ -140,11 +144,15 @@ const LessonForm: React.FC<LessonFormProps> = ({
                     onChange={(e) => handleChange('teacherId', e.target.value)}
                     label="Öğretmen"
                   >
-                    {teachers.map((teacher) => (
-                      <MenuItem key={teacher.id} value={teacher.id}>
-                        {teacher.firstName} {teacher.lastName}
-                      </MenuItem>
-                    ))}
+                    {teachers && teachers.length > 0 ? (
+                      teachers.map((teacher) => (
+                        <MenuItem key={teacher.id} value={teacher.id}>
+                          {teacher.firstName} {teacher.lastName}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem disabled>Öğretmen bulunamadı</MenuItem>
+                    )}
                   </Select>
                 </FormControl>
               </Box>
@@ -159,11 +167,15 @@ const LessonForm: React.FC<LessonFormProps> = ({
                     onChange={(e) => handleChange('lessonType', e.target.value)}
                     label="Ders Türü"
                   >
-                    {lessonTypes.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
-                        {type.label}
-                      </MenuItem>
-                    ))}
+                    {lessonTypes && lessonTypes.length > 0 ? (
+                      lessonTypes.map((type) => (
+                        <MenuItem key={type.value} value={type.value}>
+                          {type.label}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem disabled>Ders türü bulunamadı</MenuItem>
+                    )}
                   </Select>
                 </FormControl>
               </Box>
@@ -191,11 +203,15 @@ const LessonForm: React.FC<LessonFormProps> = ({
                     onChange={(e) => handleChange('classroomId', e.target.value)}
                     label="Derslik"
                   >
-                    {classrooms.map((cls) => (
-                      <MenuItem key={cls.id} value={cls.id}>
-                        {cls.name}
-                      </MenuItem>
-                    ))}
+                    {classrooms && classrooms.length > 0 ? (
+                      classrooms.map((cls) => (
+                        <MenuItem key={cls.id} value={cls.id}>
+                          {cls.name}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem disabled>Derslik bulunamadı</MenuItem>
+                    )}
                   </Select>
                 </FormControl>
               </Box>

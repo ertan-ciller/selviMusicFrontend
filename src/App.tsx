@@ -7,7 +7,11 @@ import Dashboard from './pages/Dashboard';
 import Teachers from './pages/Teachers';
 import Students from './pages/Students';
 import TeacherForm from './pages/TeacherForm';
+import TeacherDetail from './pages/TeacherDetail';
 import StudentForm from './pages/StudentForm';
+import StudentDetail from './pages/StudentDetail';
+import LessonTypes from './pages/LessonTypes';
+import LessonTypeForm from './pages/LessonTypeForm';
 import Products from './pages/Products';
 import Pricing from './pages/Pricing';
 import Sales from './pages/Sales';
@@ -70,10 +74,16 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/teachers" element={<Teachers />} />
-              <Route path="/students" element={<Students />} />
-              <Route path="/schedule" element={<Schedule />} />
               <Route path="/teachers/new" element={<TeacherForm />} />
+              <Route path="/teachers/edit/:id" element={<TeacherForm />} />
+              <Route path="/teachers/:id" element={<TeacherDetail />} />
+              <Route path="/students" element={<Students />} />
               <Route path="/students/new" element={<StudentForm />} />
+              <Route path="/students/edit/:id" element={<StudentForm />} />
+              <Route path="/students/:id" element={<StudentDetail />} />
+              <Route path="/lesson-types" element={<LessonTypes />} />
+              <Route path="/lesson-types/new" element={<LessonTypeForm />} />
+              <Route path="/schedule" element={<Schedule />} />
               <Route path="/products" element={<Products />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/sales" element={<Sales />} />

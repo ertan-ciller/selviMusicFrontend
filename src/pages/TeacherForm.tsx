@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -11,13 +11,16 @@ import {
   MenuItem,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { teacherAPI, Teacher } from '../services/api';
+import { useNavigate, useParams } from 'react-router-dom';
+import { teacherAPI, Teacher, lessonTypeAPI, LessonType } from '../services/api';
 
 const TeacherForm = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lessonTypes, setLessonTypes] = useState<LessonType[]>([]);
   const [formData, setFormData] = useState<Teacher>({
     firstName: '',
     lastName: '',
@@ -28,24 +31,39 @@ const TeacherForm = () => {
     bio: '',
   });
 
-  const instruments = [
-    'Gitar',
-    'Piyano',
-    'Keman',
-    'Davul',
-    'Flüt',
-    'Saksafon',
-    'Viyola',
-    'Çello',
-    'Kontrbas',
-    'Arp',
-    'Org',
-    'Akordeon',
-    'Klarnet',
-    'Trompet',
-    'Trombon',
-    'Vokal',
-  ];
+  const isEditMode = !!id;
+
+  useEffect(() => {
+    fetchLessonTypes();
+    if (isEditMode && id) {
+      fetchTeacher(parseInt(id));
+    }
+  }, [isEditMode, id]);
+
+  const fetchLessonTypes = async () => {
+    try {
+      const response = await lessonTypeAPI.getActive();
+      setLessonTypes(response.data);
+    } catch (err) {
+      console.error('Fetch lesson types error:', err);
+      setError('Ders türleri yüklenirken bir hata oluştu');
+    }
+  };
+
+  const fetchTeacher = async (teacherId: number) => {
+    try {
+      setInitialLoading(true);
+      const response = await teacherAPI.getById(teacherId);
+      setFormData(response.data);
+    } catch (err) {
+      setError('Öğretmen bilgileri yüklenirken bir hata oluştu');
+      console.error('Fetch teacher error:', err);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+
 
   const handleInputChange = (field: keyof Teacher, value: string | number) => {
     setFormData(prev => ({
@@ -92,15 +110,27 @@ const TeacherForm = () => {
 
     try {
       setLoading(true);
-      await teacherAPI.create(formData);
+      if (isEditMode && id) {
+        await teacherAPI.update(parseInt(id), formData);
+      } else {
+        await teacherAPI.create(formData);
+      }
       navigate('/teachers');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Öğretmen eklenirken bir hata oluştu');
-      console.error('Create teacher error:', err);
+      setError(err.response?.data?.message || `Öğretmen ${isEditMode ? 'güncellenirken' : 'eklenirken'} bir hata oluştu`);
+      console.error(`${isEditMode ? 'Update' : 'Create'} teacher error:`, err);
     } finally {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -113,7 +143,7 @@ const TeacherForm = () => {
           Geri
         </Button>
         <Typography variant="h4">
-          Yeni Öğretmen Ekle
+          {isEditMode ? 'Öğretmen Düzenle' : 'Yeni Öğretmen Ekle'}
         </Typography>
       </Box>
 
@@ -174,9 +204,9 @@ const TeacherForm = () => {
                   onChange={(e) => handleInputChange('instrument', e.target.value)}
                   required
                 >
-                  {instruments.map((instrument) => (
-                    <MenuItem key={instrument} value={instrument}>
-                      {instrument}
+                  {lessonTypes.map((lessonType) => (
+                    <MenuItem key={lessonType.id} value={lessonType.name}>
+                      {lessonType.name}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -217,7 +247,7 @@ const TeacherForm = () => {
                   startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
                   disabled={loading}
                 >
-                  {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                  {loading ? (isEditMode ? 'Güncelleniyor...' : 'Kaydediliyor...') : (isEditMode ? 'Güncelle' : 'Kaydet')}
                 </Button>
               </Box>
             </Box>

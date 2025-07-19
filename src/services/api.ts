@@ -34,11 +34,14 @@ export interface Student {
   parentPhone: string;
   notes: string;
   teacherId: number;
+  teacherName?: string;
 }
 
 export interface TeacherWithStudents extends Teacher {
   students: Student[];
 }
+
+
 
 // Product Types
 export interface Product {
@@ -201,6 +204,7 @@ export interface LessonType {
   name: string;
   description?: string;
   durationMinutes: number;
+  price: number;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;

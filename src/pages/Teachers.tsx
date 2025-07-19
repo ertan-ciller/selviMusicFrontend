@@ -58,8 +58,7 @@ const Teachers= () => {
   };
 
   const handleViewDetails = (id: number) => {
-    // Detay sayfasına yönlendirme (gelecekte eklenebilir)
-    console.log('View teacher details:', id);
+    navigate(`/teachers/${id}`);
   };
 
   const filteredTeachers = teachers.filter(teacher =>

@@ -24,6 +24,7 @@ import {
   ShoppingCart as CartIcon,
   Payment as PaymentIcon,
   CalendarToday as CalendarIcon,
+  Category as CategoryIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -44,6 +45,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Öğretmenler', icon: <SchoolIcon />, path: '/teachers' },
     { text: 'Öğrenciler', icon: <PersonIcon />, path: '/students' },
+    { text: 'Ders Türleri', icon: <CategoryIcon />, path: '/lesson-types' },
     { text: 'Ders Programı', icon: <CalendarIcon />, path: '/schedule' },
     { text: 'Ürünler', icon: <InventoryIcon />, path: '/products' },
     { text: 'Ücretlendirme', icon: <MoneyIcon />, path: '/pricing' },

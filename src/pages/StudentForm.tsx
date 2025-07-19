@@ -11,15 +11,21 @@ import {
   MenuItem,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { studentAPI, teacherAPI, Student, Teacher } from '../services/api';
+import { useNavigate, useParams } from 'react-router-dom';
+import { studentAPI, teacherAPI, lessonTypeAPI, Student, Teacher, LessonType } from '../services/api';
 
 const StudentForm = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = Boolean(id);
+  
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(isEditMode);
   const [teachersLoading, setTeachersLoading] = useState(true);
+  const [lessonTypesLoading, setLessonTypesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [lessonTypes, setLessonTypes] = useState<LessonType[]>([]);
   const [formData, setFormData] = useState<Student>({
     firstName: '',
     lastName: '',
@@ -34,25 +40,6 @@ const StudentForm = () => {
     teacherId: 0,
   });
 
-  const instruments = [
-    'Gitar',
-    'Piyano',
-    'Keman',
-    'Davul',
-    'Flüt',
-    'Saksafon',
-    'Viyola',
-    'Çello',
-    'Kontrbas',
-    'Arp',
-    'Org',
-    'Akordeon',
-    'Klarnet',
-    'Trompet',
-    'Trombon',
-    'Vokal',
-  ];
-
   const skillLevels = [
     { value: 'BEGINNER', label: 'Başlangıç' },
     { value: 'INTERMEDIATE', label: 'Orta' },
@@ -62,7 +49,24 @@ const StudentForm = () => {
 
   useEffect(() => {
     fetchTeachers();
-  }, []);
+    fetchLessonTypes();
+    if (isEditMode) {
+      fetchStudent();
+    }
+  }, [id]);
+
+  const fetchStudent = async () => {
+    try {
+      setInitialLoading(true);
+      const response = await studentAPI.getById(parseInt(id!));
+      setFormData(response.data);
+    } catch (err) {
+      setError('Öğrenci bilgileri yüklenirken bir hata oluştu');
+      console.error('Fetch student error:', err);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
   const fetchTeachers = async () => {
     try {
@@ -74,6 +78,19 @@ const StudentForm = () => {
       console.error('Fetch teachers error:', err);
     } finally {
       setTeachersLoading(false);
+    }
+  };
+
+  const fetchLessonTypes = async () => {
+    try {
+      setLessonTypesLoading(true);
+      const response = await lessonTypeAPI.getAll();
+      setLessonTypes(response.data);
+    } catch (err) {
+      setError('Ders türleri yüklenirken bir hata oluştu');
+      console.error('Fetch lesson types error:', err);
+    } finally {
+      setLessonTypesLoading(false);
     }
   };
 
@@ -134,17 +151,21 @@ const StudentForm = () => {
 
     try {
       setLoading(true);
-      await studentAPI.create(formData);
+      if (isEditMode) {
+        await studentAPI.update(parseInt(id!), formData);
+      } else {
+        await studentAPI.create(formData);
+      }
       navigate('/students');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Öğrenci eklenirken bir hata oluştu');
-      console.error('Create student error:', err);
+      setError(err.response?.data?.message || (isEditMode ? 'Öğrenci güncellenirken bir hata oluştu' : 'Öğrenci eklenirken bir hata oluştu'));
+      console.error(isEditMode ? 'Update student error:' : 'Create student error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (teachersLoading) {
+  if (initialLoading || teachersLoading || lessonTypesLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -163,7 +184,7 @@ const StudentForm = () => {
           Geri
         </Button>
         <Typography variant="h4">
-          Yeni Öğrenci Ekle
+          {isEditMode ? 'Öğrenci Düzenle' : 'Yeni Öğrenci Ekle'}
         </Typography>
       </Box>
 
@@ -235,9 +256,9 @@ const StudentForm = () => {
                   onChange={(e) => handleInputChange('instrument', e.target.value)}
                   required
                 >
-                  {instruments.map((instrument) => (
-                    <MenuItem key={instrument} value={instrument}>
-                      {instrument}
+                  {lessonTypes.map((lessonType) => (
+                    <MenuItem key={lessonType.id} value={lessonType.name}>
+                      {lessonType.name}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -325,7 +346,7 @@ const StudentForm = () => {
                   startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
                   disabled={loading}
                 >
-                  {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                  {loading ? (isEditMode ? 'Güncelleniyor...' : 'Kaydediliyor...') : (isEditMode ? 'Güncelle' : 'Kaydet')}
                 </Button>
               </Box>
             </Box>

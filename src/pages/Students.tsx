@@ -65,8 +65,7 @@ const Students = () => {
   };
 
   const handleViewDetails = (id: number) => {
-    // Detay sayfasına yönlendirme (gelecekte eklenebilir)
-    console.log('View student details:', id);
+    navigate(`/students/${id}`);
   };
 
   const getTeacherName = (teacherId: number) => {
