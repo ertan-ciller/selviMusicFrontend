@@ -215,7 +215,7 @@ export interface LessonPricing {
   id?: number;
   lessonTypeId: number;
   lessonTypeName?: string;
-  studentPrice: number;
+  lessonPrice: number;
   teacherCommission: number;
   musicSchoolShare: number;
   isActive: boolean;
@@ -227,7 +227,7 @@ export interface LessonPricing {
 
 export interface CreateLessonPricingRequest {
   lessonTypeId: number;
-  studentPrice: number;
+  lessonPrice: number;
   teacherCommission: number;
   musicSchoolShare: number;
   effectiveFrom: string;

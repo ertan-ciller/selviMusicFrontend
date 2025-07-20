@@ -50,7 +50,7 @@ const PricingPage: React.FC = () => {
 
   const [formData, setFormData] = useState<CreateLessonPricingRequest>({
     lessonTypeId: 0,
-    studentPrice: 0,
+    lessonPrice: 0,
     teacherCommission: 0,
     musicSchoolShare: 0,
     effectiveFrom: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:mm format
@@ -82,7 +82,7 @@ const PricingPage: React.FC = () => {
       setEditingPricing(pricing);
       setFormData({
         lessonTypeId: pricing.lessonTypeId,
-        studentPrice: pricing.studentPrice,
+        lessonPrice: pricing.lessonPrice,
         teacherCommission: pricing.teacherCommission,
         musicSchoolShare: pricing.musicSchoolShare,
         effectiveFrom: pricing.effectiveFrom.slice(0, 16),
@@ -92,7 +92,7 @@ const PricingPage: React.FC = () => {
       setEditingPricing(null);
       setFormData({
         lessonTypeId: 0,
-        studentPrice: 0,
+        lessonPrice: 0,
         teacherCommission: 0,
         musicSchoolShare: 0,
         effectiveFrom: new Date().toISOString().slice(0, 16),
@@ -164,7 +164,7 @@ const PricingPage: React.FC = () => {
 
   const isFormValid = () => {
     return formData.lessonTypeId > 0 && 
-           formData.studentPrice > 0 && 
+           formData.lessonPrice > 0 && 
            formData.teacherCommission > 0 && 
            formData.musicSchoolShare > 0 &&
            formData.effectiveFrom;
@@ -193,7 +193,7 @@ const PricingPage: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>Ders Türü</TableCell>
-              <TableCell>Öğrenci Ücreti</TableCell>
+              <TableCell>Ders Ücreti</TableCell>
               <TableCell>Öğretmen Komisyonu</TableCell>
               <TableCell>Müzik Okulu Payı</TableCell>
               <TableCell>Geçerlilik Başlangıcı</TableCell>
@@ -224,7 +224,7 @@ const PricingPage: React.FC = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {formatCurrency(pricing.studentPrice)}
+                    {formatCurrency(pricing.lessonPrice)}
                   </TableCell>
                   <TableCell>
                     {formatCurrency(pricing.teacherCommission)}
@@ -303,14 +303,14 @@ const PricingPage: React.FC = () => {
             <Box display="flex" gap={2} flexWrap="wrap">
               <Box flex={1} minWidth={300}>
                 <TextField
-                  label="Öğrenci Ücreti (₺)"
+                  label="Ders Ücreti (₺)"
                   fullWidth
                   type="number"
-                  value={formData.studentPrice}
-                  onChange={(e) => setFormData({ ...formData, studentPrice: parseFloat(e.target.value) || 0 })}
+                  value={formData.lessonPrice}
+                  onChange={(e) => setFormData({ ...formData, lessonPrice: parseFloat(e.target.value) || 0 })}
                   required
                   inputProps={{ min: 0, step: 0.01 }}
-                  helperText="Öğrenciden alınacak ücret"
+                  helperText="Ders için alınacak ücret"
                 />
               </Box>
               <Box flex={1} minWidth={300}>
@@ -374,7 +374,7 @@ const PricingPage: React.FC = () => {
                 <Box display="flex" gap={2} flexWrap="wrap">
                   <Box flex={1} minWidth={200}>
                     <Typography variant="body2" color="textSecondary">
-                      Öğrenci Ücreti: {formatCurrency(formData.studentPrice)}
+                      Ders Ücreti: {formatCurrency(formData.lessonPrice)}
                     </Typography>
                   </Box>
                   <Box flex={1} minWidth={200}>
@@ -391,13 +391,13 @@ const PricingPage: React.FC = () => {
                 <Box mt={1}>
                   <Typography 
                     variant="body1" 
-                    color={formData.studentPrice === (formData.teacherCommission + formData.musicSchoolShare) ? 'success.main' : 'error.main'}
+                    color={formData.lessonPrice === (formData.teacherCommission + formData.musicSchoolShare) ? 'success.main' : 'error.main'}
                     fontWeight="bold"
                   >
                     Toplam: {formatCurrency(formData.teacherCommission + formData.musicSchoolShare)} 
-                    {formData.studentPrice === (formData.teacherCommission + formData.musicSchoolShare) 
+                    {formData.lessonPrice === (formData.teacherCommission + formData.musicSchoolShare) 
                       ? ' ✓' 
-                      : ' (Öğrenci ücreti ile eşleşmiyor!)'}
+                      : ' (Ders ücreti ile eşleşmiyor!)'}
                   </Typography>
                 </Box>
               </CardContent>
@@ -409,7 +409,7 @@ const PricingPage: React.FC = () => {
           <Button 
             onClick={handleSubmit} 
             variant="contained"
-            disabled={!isFormValid() || formData.studentPrice !== (formData.teacherCommission + formData.musicSchoolShare)}
+            disabled={!isFormValid() || formData.lessonPrice !== (formData.teacherCommission + formData.musicSchoolShare)}
           >
             {editingPricing ? 'Güncelle' : 'Ekle'}
           </Button>
