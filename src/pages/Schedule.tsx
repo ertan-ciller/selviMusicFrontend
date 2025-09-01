@@ -44,7 +44,6 @@ import ScheduleStats from '../components/ScheduleStats';
 
 const Schedule: React.FC = () => {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
-  const [selectedClassroom, setSelectedClassroom] = useState<number>(0);
 
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [schedules, setSchedules] = useState<LessonSchedule[]>([]);
@@ -97,7 +96,6 @@ const Schedule: React.FC = () => {
     try {
       const res = await classroomAPI.getAll();
       setClassrooms(res.data);
-      if (res.data.length > 0) setSelectedClassroom(res.data[0].id);
     } catch (err) {
       console.error('Error loading classrooms:', err);
       setClassrooms([]);
@@ -204,6 +202,40 @@ const Schedule: React.FC = () => {
     };
     return colors[lessonType] || '#607D8B';
   };
+
+  const getClassroomName = (classroomId: number) => {
+    const classroom = classrooms.find(c => c.id === classroomId);
+    return classroom ? classroom.name : '';
+  };
+
+  const getTeacherColor = (teacherId: number | undefined) => {
+    const palette = [
+      '#8E44AD', '#2980B9', '#27AE60', '#D35400', '#C0392B', '#16A085',
+      '#2C3E50', '#7F8C8D', '#9B59B6', '#1ABC9C', '#F39C12', '#E74C3C',
+    ];
+    const safeId = teacherId ?? 0;
+    const index = Math.abs(safeId) % palette.length;
+    return palette[index];
+  };
+
+  const getScheduleForSlot = (dayKey: string, classroomId: number, timeString: string) => {
+    return filteredSchedules.find(
+      s => s.dayOfWeek === dayKey && s.isActive && s.classroomId === classroomId && s.startTime.slice(0, 5) === timeString
+    ) || null;
+  };
+
+  const renderTeacherLegend = () => (
+    <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+      {teachers.map(t => (
+        <Box key={t.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pr: 1 }}>
+          <Box sx={{ width: 16, height: 10, borderRadius: 0.5, backgroundColor: getTeacherColor(t.id) }} />
+          <Typography variant="caption" sx={{ fontSize: '0.72rem' }}>
+            {`${t.firstName} ${t.lastName}`}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+  );
 
   const handleAddLesson = () => {
     setEditingSchedule(null);
@@ -325,249 +357,71 @@ const Schedule: React.FC = () => {
     end: addWeeks(weekStart, 1),
   });
 
-  // Haftalık grid renderını fonksiyona al
-  const renderWeeklyGrid = (classroom: { id: number; name: string }) => (
-    <Box key={classroom.id} sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>{classroom.name}</Typography>
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        {/* Time slots column */}
-        <Box sx={{ display: { xs: 'none', md: 'block' }, width: 90, flexShrink: 0 }}>
-          <Box sx={{ height: 112 }} /> {/* Header spacer */}
-          {Array.from({ length: 12 }, (_, i) => (
-            <Box
-              key={i}
-              sx={{
-                height: 113,
-                borderTop: '1px solid #e0e0e0',
-                borderBottom: '1px solid #e0e0e0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1rem',
-                color: '#666',
-              }}
-            >
-              {`${i + 8}:00`}
-            </Box>
-          ))}
-        </Box>
-        {/* Days columns */}
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1 }}>
-          {dayKeys.map((dayKey, dayIndex) => (
-            <Box key={dayKey} sx={{ flex: 1, minWidth: { xs: '100%', sm: 200, md: 150 } }}>
-              <Paper
-                sx={{
-                  p: 1,
-                  height: '100%',
-                  backgroundColor: dayIndex >= 5 ? '#fafafa' : 'white',
-                  minHeight: { xs: 400, md: 'auto' },
-                }}
-              >
-                {/* Day header */}
-                <Box
-                  sx={{
-                    height: 120,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderBottom: '1px solid #e0e0e0',
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    {weekDays[dayIndex]}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {format(weekDates[dayIndex], 'dd MMM', { locale: tr })}
-                  </Typography>
-                </Box>
-                {/* Time slots */}
-                <Box sx={{ position: 'relative' }}>
-                  {Array.from({ length: 12 }, (_, timeSlot) => {
-                    const hour = timeSlot + 8;
-                    const timeString = `${hour.toString().padStart(2, '0')}:00`;
-                    const daySchedules = getSchedulesForDay(dayKey, classroom.id);
-                    const scheduleForThisTime = daySchedules.find(
-                      schedule => schedule.startTime.slice(0, 5) === timeString
-                    );
-                    return (
-                      <Box
-                        key={timeSlot}
-                        sx={{
-                          height: { xs: 120 , md: 110 },
-                          borderBottom: '1px solid #e0e0e0',
-                          position: 'relative',
-                          '&:hover': {
-                            backgroundColor: '#f5f5f5',
-                          },
-                        }}
-                      >
-                        {/* Time label for mobile */}
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            position: 'absolute',
-                            top: 2,
-                            left: 2,
-                            color: '#666',
-                            display: { xs: 'block', md: 'none' },
-                            fontSize: '0.7rem',
-                          }}
-                        >
-                          {timeString}
-                        </Typography>
-                        {scheduleForThisTime && (
-                          <Card
-                            sx={{
-                              position: 'absolute',
-                              top: { xs: 20, md: 4 },
-                              left: { xs: 2, md: 4 },
-                              right: { xs: 2, md: 4 },
-                              bottom: { xs: 2, md: 4 },
-                              backgroundColor: getLessonTypeColor(scheduleForThisTime.lessonType),
-                              color: 'white',
-                              zIndex: 1,
-                            }}
-                          >
-                            <CardContent sx={{ p: { xs: 0.5, md: 1 }, '&:last-child': { pb: { xs: 0.5, md: 1 } } }}>
-                              <Typography 
-                                variant="caption" 
-                                display="block" 
-                                fontWeight="bold"
-                                sx={{ fontSize: { xs: '0.7rem', md: '0.75rem' } }}
-                              >
-                                {getStudentName(scheduleForThisTime.studentId)}
-                              </Typography>
-                              <Typography 
-                                variant="caption" 
-                                display="block"
-                                sx={{ fontSize: { xs: '0.65rem', md: '0.75rem' } }}
-                              >
-                                {getTeacherName(scheduleForThisTime.teacherId)}
-                              </Typography>
-                              <Typography 
-                                variant="caption" 
-                                display="block"
-                                sx={{ fontSize: { xs: '0.65rem', md: '0.75rem' } }}
-                              >
-                                {scheduleForThisTime.lessonType}
-                              </Typography>
-                              <Typography 
-                                variant="caption" 
-                                display="block"
-                                sx={{ fontSize: { xs: '0.65rem', md: '0.75rem' } }}
-                              >
-                                {scheduleForThisTime.startTime.slice(0, 5)} - {scheduleForThisTime.endTime.slice(0, 5)}
-                              </Typography>
-                              {/* Attendance Status */}
-                              {(() => {
-                                const attendanceStatus = getAttendanceStatus(scheduleForThisTime.id!, weekDates[dayIndex]);
-                                return attendanceStatus ? (
-                                  <Chip
-                                    label={getAttendanceStatusText(attendanceStatus)}
-                                    size="small"
-                                    sx={{
-                                      backgroundColor: getAttendanceStatusColor(attendanceStatus),
-                                      color: 'white',
-                                      fontSize: { xs: '0.6rem', md: '0.7rem' },
-                                      height: { xs: 16, md: 20 },
-                                      mt: 0.5,
-                                    }}
-                                  />
-                                ) : null;
-                              })()}
-                              <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                                {/* Attendance Buttons */}
-                                <Tooltip title="Dersi Tamamla">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleMarkAttendance(scheduleForThisTime, 'COMPLETED', weekDates[dayIndex])}
-                                    sx={{ 
-                                      color: 'white', 
-                                      p: { xs: 0.25, md: 0.5 },
-                                      '& .MuiSvgIcon-root': {
-                                        fontSize: { xs: '1rem', md: '1.25rem' }
-                                      }
-                                    }}
-                                  >
-                                    <CheckCircleIcon />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Dersi İptal Et">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleMarkAttendance(scheduleForThisTime, 'CANCELLED', weekDates[dayIndex])}
-                                    sx={{ 
-                                      color: 'white', 
-                                      p: { xs: 0.25, md: 0.5 },
-                                      '& .MuiSvgIcon-root': {
-                                        fontSize: { xs: '1rem', md: '1.25rem' }
-                                      }
-                                    }}
-                                  >
-                                    <CancelIcon />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Devamsızlık">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleMarkAttendance(scheduleForThisTime, 'ABSENT', weekDates[dayIndex])}
-                                    sx={{ 
-                                      color: 'white', 
-                                      p: { xs: 0.25, md: 0.5 },
-                                      '& .MuiSvgIcon-root': {
-                                        fontSize: { xs: '1rem', md: '1.25rem' }
-                                      }
-                                    }}
-                                  >
-                                    <PersonOffIcon />
-                                  </IconButton>
-                                </Tooltip>
-                                {/* Edit and Delete Buttons */}
-                                <Tooltip title="Düzenle">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleEditLesson(scheduleForThisTime)}
-                                    sx={{ 
-                                      color: 'white', 
-                                      p: { xs: 0.25, md: 0.5 },
-                                      '& .MuiSvgIcon-root': {
-                                        fontSize: { xs: '1rem', md: '1.25rem' }
-                                      }
-                                    }}
-                                  >
-                                    <EditIcon />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Sil">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleDeleteLesson(scheduleForThisTime.id!)}
-                                    sx={{ 
-                                      color: 'white', 
-                                      p: { xs: 0.25, md: 0.5 },
-                                      '& .MuiSvgIcon-root': {
-                                        fontSize: { xs: '1rem', md: '1.25rem' }
-                                      }
-                                    }}
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
-                                </Tooltip>
-                              </Box>
-                            </CardContent>
-                          </Card>
-                        )}
+  // Tüm derslikleri tek tabloda (her saat 8'e bölünmüş) gösteren grid
+  const renderUnifiedWeeklyGrid = () => (
+    <Box sx={{ mb: 6 }}>
+      <Paper sx={{ p: 1 }}>
+        {/* Üst başlık: Gün & Derslik sabit sütunları + saatler */}
+        {(() => {
+          const hours = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
+          const hourColumnWidth = 130; // px - saat kolon genişliği
+          const classroomColumnWidth = 75; // px - derslik adı kolon genişliği (küçültüldü)
+          return (
+            <>
+              <Box sx={{ mb: 1, display: 'grid', gridTemplateColumns: `140px ${classroomColumnWidth}px repeat(${hours.length}, ${hourColumnWidth}px)`, gap: 0.5 }}>
+                <Box />
+                <Box />
+                {hours.map(h => (
+                  <Box key={h} sx={{ textAlign: 'center', border: '1px solid #eee', borderRadius: 1, py: 0.5 }}>
+                    <Typography variant="caption" sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' } }}>{h}</Typography>
+                  </Box>
+                ))}
+              </Box>
+              {/* Gövde: Gün başlığı tek, tüm derslikleri kapsayacak şekilde sol sütunda; sağda derslik satırları */}
+              {dayKeys.map((dayKey, dayIndex) => (
+                <Box key={dayKey} sx={{ display: 'grid', gridTemplateColumns: `140px ${classroomColumnWidth}px repeat(${hours.length}, ${hourColumnWidth}px)`, gap: 0.5, mb: 0.5, gridAutoRows: '23px' }}>
+                  {/* Sol: Gün etiketi tüm derslik satırlarını kapsar */}
+                  <Box sx={{ gridRow: `1 / span ${classrooms.length}`, border: '1px solid #ddd', borderRadius: 1, px: 1, py: 0.5, backgroundColor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ fontSize: { xs: '0.72rem', md: '0.78rem' }, fontWeight: 700 }}>{weekDays[dayIndex]}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: { xs: '0.62rem', md: '0.68rem' } }}>{format(weekDates[dayIndex], 'dd MMM', { locale: tr })}</Typography>
+                    </Box>
+                  </Box>
+                  {/* Sağ: her derslik için bir satır */}
+                  {classrooms.map(c => (
+                    <React.Fragment key={`${dayKey}-${c.id}`}>
+                      <Box sx={{ textAlign: 'left', border: '1px solid #eee', borderRadius: 1, px: 0.4, py: 0.1 }}>
+                        <Typography variant="caption" sx={{ fontSize: { xs: '0.58rem', md: '0.65rem' } }}>{c.name}</Typography>
                       </Box>
-                    );
-                  })}
+                      {hours.map(h => {
+                        const scheduleForThisTime = getScheduleForSlot(dayKey, c.id, h);
+                        return (
+                          <Box key={`${c.id}-${h}`}>
+                            {scheduleForThisTime ? (
+                              <Card sx={{ backgroundColor: getTeacherColor(scheduleForThisTime.teacherId), color: 'white' }}>
+                                <CardContent sx={{ p: 0.3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', '&:last-child': { pb: 0.3 } }}>
+                                  <Typography variant="caption" sx={{ fontSize: '0.64rem', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{getStudentName(scheduleForThisTime.studentId)}</Typography>
+                                  <Box sx={{ display: 'flex', gap: 0.2 }}>
+                                    <Tooltip title="Dersi Tamamla"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'COMPLETED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><CheckCircleIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
+                                    <Tooltip title="Dersi İptal Et"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'CANCELLED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><CancelIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
+                                    <Tooltip title="Devamsızlık"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'ABSENT', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><PersonOffIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
+                                  </Box>
+                                </CardContent>
+                              </Card>
+                            ) : (
+                              <Box sx={{ border: '1px dashed #eee', borderRadius: 1, height: '100%' }} />
+                            )}
+                          </Box>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
                 </Box>
-              </Paper>
-            </Box>
-          ))}
-        </Box>
-      </Box>
+              ))}
+            </>
+          );
+        })()}
+      </Paper>
     </Box>
   );
 
@@ -615,19 +469,9 @@ const Schedule: React.FC = () => {
         onFilterChange={handleFilterChange}
         lessonTypes={lessonTypes}
       />
-      {/* Derslik seçimi */}
-      <FormControl size="small" sx={{ minWidth: 180, mb: 2 }}>
-        <InputLabel>Derslik Seç</InputLabel>
-        <Select
-          value={selectedClassroom}
-          label="Derslik Seç"
-          onChange={e => setSelectedClassroom(Number(e.target.value))}
-        >
-          {classrooms.map(cls => (
-            <MenuItem key={cls.id} value={cls.id}>{cls.name}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {/* Öğretmen renk legendi */}
+      {renderTeacherLegend()}
+      {/* Derslik seçimi kaldırıldı - tek tabloda tüm derslikler gösteriliyor */}
       {/* Week Navigation */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -652,8 +496,8 @@ const Schedule: React.FC = () => {
           </IconButton>
         </Box>
       </Paper>
-      {/* Sadece seçili dersliğin haftalık gridini göster */}
-      {classrooms.find(cls => cls.id === selectedClassroom) && renderWeeklyGrid(classrooms.find(cls => cls.id === selectedClassroom)!)}
+      {/* Tüm derslikleri tek tabloda göster */}
+      {renderUnifiedWeeklyGrid()}
       {/* Lesson Form Dialog */}
       <LessonForm
         open={openForm}
