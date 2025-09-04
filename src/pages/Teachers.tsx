@@ -93,17 +93,17 @@ const Teachers= () => {
       headerName: 'Telefon',
       width: 150,
     },
+    
     {
-      field: 'instrument',
-      headerName: 'Enstrüman',
-      width: 130,
+      field: 'lessonTypes',
+      headerName: 'Ders Türleri',
+      width: 220,
       renderCell: (params) => (
-        <Chip
-          label={params.value}
-          size="small"
-          color="primary"
-          variant="outlined"
-        />
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          {(params.row.lessonTypes || []).map((lt: { id: number; name: string }) => (
+            <Chip key={lt.id} label={lt.name} size="small" variant="outlined" />
+          ))}
+        </Box>
       ),
     },
     {

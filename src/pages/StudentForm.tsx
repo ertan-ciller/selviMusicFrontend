@@ -36,6 +36,8 @@ const StudentForm = () => {
     skillLevel: 'BEGINNER',
     parentName: '',
     parentPhone: '',
+    secondParentName: '',
+    secondParentPhone: '',
     notes: '',
     teacherId: 0,
   });
@@ -110,10 +112,7 @@ const StudentForm = () => {
       setError('Soyad alanı zorunludur');
       return false;
     }
-    if (!formData.email.trim()) {
-      setError('E-posta alanı zorunludur');
-      return false;
-    }
+    // E-posta opsiyonel
     if (!formData.phoneNumber.trim()) {
       setError('Telefon alanı zorunludur');
       return false;
@@ -223,11 +222,10 @@ const StudentForm = () => {
               <Box display="flex" gap={2}>
                 <TextField
                   fullWidth
-                  label="E-posta *"
+                  label="E-posta"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  required
                 />
                 <TextField
                   fullWidth
@@ -283,12 +281,27 @@ const StudentForm = () => {
                   fullWidth
                   label="Öğretmen *"
                   value={formData.teacherId}
-                  onChange={(e) => handleInputChange('teacherId', parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const selectedId = parseInt(e.target.value as string);
+                    const selectedTeacher = teachers.find(t => t.id === selectedId);
+                    handleInputChange('teacherId', selectedId);
+                    if (selectedTeacher) {
+                      const autoInstrument = (selectedTeacher.lessonTypes && selectedTeacher.lessonTypes.length > 0)
+                        ? selectedTeacher.lessonTypes[0].name
+                        : (selectedTeacher.instrument || '');
+                      if (autoInstrument) {
+                        handleInputChange('instrument', autoInstrument);
+                      }
+                    }
+                  }}
                   required
                 >
                   {teachers.map((teacher) => (
                     <MenuItem key={teacher.id} value={teacher.id}>
-                      {teacher.firstName} {teacher.lastName} - {teacher.instrument}
+                      {teacher.firstName} {teacher.lastName}
+                      {` - ${(teacher.lessonTypes && teacher.lessonTypes.length > 0)
+                        ? teacher.lessonTypes.map(lt => lt.name).join(', ')
+                        : (teacher.instrument || '')}`}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -314,6 +327,28 @@ const StudentForm = () => {
                   value={formData.parentPhone}
                   onChange={(e) => handleInputChange('parentPhone', e.target.value)}
                   required
+                  placeholder="0555-123-4567"
+                />
+              </Box>
+
+              {/* 2. Veli Bilgileri (opsiyonel) */}
+              <Box>
+                <Typography variant="subtitle1" gutterBottom sx={{ mt: 1 }}>
+                  İkinci Veli Bilgileri (Opsiyonel)
+                </Typography>
+              </Box>
+              <Box display="flex" gap={2}>
+                <TextField
+                  fullWidth
+                  label="2. Veli Adı"
+                  value={formData.secondParentName || ''}
+                  onChange={(e) => handleInputChange('secondParentName' as any, e.target.value)}
+                />
+                <TextField
+                  fullWidth
+                  label="2. Veli Telefonu"
+                  value={formData.secondParentPhone || ''}
+                  onChange={(e) => handleInputChange('secondParentPhone' as any, e.target.value)}
                   placeholder="0555-123-4567"
                 />
               </Box>

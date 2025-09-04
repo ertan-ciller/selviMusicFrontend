@@ -9,6 +9,7 @@ import {
   Alert,
   CircularProgress,
   MenuItem,
+  Chip,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -29,6 +30,7 @@ const TeacherForm = () => {
     instrument: '',
     experienceYears: 0,
     bio: '',
+    lessonTypeIds: [],
   });
 
   const isEditMode = !!id;
@@ -54,7 +56,10 @@ const TeacherForm = () => {
     try {
       setInitialLoading(true);
       const response = await teacherAPI.getById(teacherId);
-      setFormData(response.data);
+      setFormData({
+        ...response.data,
+        lessonTypeIds: response.data.lessonTypes?.map((lt) => lt.id!) || [],
+      });
     } catch (err) {
       setError('Öğretmen bilgileri yüklenirken bir hata oluştu');
       console.error('Fetch teacher error:', err);
@@ -65,7 +70,7 @@ const TeacherForm = () => {
 
 
 
-  const handleInputChange = (field: keyof Teacher, value: string | number) => {
+  const handleInputChange = (field: keyof Teacher, value: string | number | number[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -81,20 +86,17 @@ const TeacherForm = () => {
       setError('Soyad alanı zorunludur');
       return false;
     }
-    if (!formData.email.trim()) {
-      setError('E-posta alanı zorunludur');
-      return false;
-    }
+    // E-posta opsiyonel
     if (!formData.phoneNumber.trim()) {
       setError('Telefon alanı zorunludur');
       return false;
     }
-    if (!formData.instrument.trim()) {
-      setError('Enstrüman alanı zorunludur');
-      return false;
-    }
     if (formData.experienceYears < 0) {
       setError('Deneyim yılı 0\'dan küçük olamaz');
+      return false;
+    }
+    if (!formData.lessonTypeIds || formData.lessonTypeIds.length === 0) {
+      setError('En az bir ders türü seçilmelidir');
       return false;
     }
     return true;
@@ -178,11 +180,10 @@ const TeacherForm = () => {
               <Box flex={1}>
                 <TextField
                   fullWidth
-                  label="E-posta *"
+                  label="E-posta"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  required
                 />
               </Box>
               <Box flex={1}>
@@ -195,17 +196,33 @@ const TeacherForm = () => {
                   placeholder="0555-123-4567"
                 />
               </Box>
+              {/* Enstrüman alanı kaldırıldı */}
               <Box flex={1}>
                 <TextField
                   select
                   fullWidth
-                  label="Enstrüman *"
-                  value={formData.instrument}
-                  onChange={(e) => handleInputChange('instrument', e.target.value)}
+                  label="Ders Türleri *"
+                  SelectProps={{
+                    multiple: true,
+                    renderValue: (selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {(selected as number[]).map((id) => {
+                          const lt = lessonTypes.find((l) => l.id === id);
+                          return <Chip key={id} label={lt?.name || id} size="small" />;
+                        })}
+                      </Box>
+                    ),
+                  }}
+                  value={formData.lessonTypeIds || []}
+                  onChange={(e) => {
+                    const value = e.target.value as unknown as number[] | string[];
+                    const ids = Array.isArray(value) ? value.map((v) => Number(v)) : [];
+                    handleInputChange('lessonTypeIds', ids);
+                  }}
                   required
                 >
                   {lessonTypes.map((lessonType) => (
-                    <MenuItem key={lessonType.id} value={lessonType.name}>
+                    <MenuItem key={lessonType.id} value={lessonType.id}>
                       {lessonType.name}
                     </MenuItem>
                   ))}

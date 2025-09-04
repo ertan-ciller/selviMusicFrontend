@@ -138,12 +138,11 @@ const TeacherDetail = () => {
                   <Typography variant="h5" gutterBottom>
                     {teacher.firstName} {teacher.lastName}
                   </Typography>
-                  <Chip
-                    label={teacher.instrument}
-                    color="primary"
-                    variant="outlined"
-                    icon={<MusicNoteIcon />}
-                  />
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    {(teacher.lessonTypes || []).map((lt) => (
+                      <Chip key={lt.id} label={lt.name} color="primary" variant="outlined" icon={<MusicNoteIcon />} />
+                    ))}
+                  </Box>
                 </Box>
               </Box>
 

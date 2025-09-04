@@ -379,7 +379,7 @@ const Schedule: React.FC = () => {
               </Box>
               {/* Gövde: Gün başlığı tek, tüm derslikleri kapsayacak şekilde sol sütunda; sağda derslik satırları */}
               {dayKeys.map((dayKey, dayIndex) => (
-                <Box key={dayKey} sx={{ display: 'grid', gridTemplateColumns: `140px ${classroomColumnWidth}px repeat(${hours.length}, ${hourColumnWidth}px)`, gap: 0.5, mb: 0.5, gridAutoRows: '23px' }}>
+                <Box key={dayKey} sx={{ display: 'grid', gridTemplateColumns: `140px ${classroomColumnWidth}px repeat(${hours.length}, ${hourColumnWidth}px)`, gap: 0.5, mb: 0.5, gridAutoRows: '23px', borderBottom: (theme) => dayIndex < dayKeys.length - 1 ? `1px solid ${theme.palette.divider}` : 'none', pb: 0.5 }}>
                   {/* Sol: Gün etiketi tüm derslik satırlarını kapsar */}
                   <Box sx={{ gridRow: `1 / span ${classrooms.length}`, border: '1px solid #ddd', borderRadius: 1, px: 1, py: 0.5, backgroundColor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Box sx={{ textAlign: 'center' }}>

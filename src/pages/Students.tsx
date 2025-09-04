@@ -181,6 +181,11 @@ const Students = () => {
       width: 130,
     },
     {
+      field: 'secondParentName',
+      headerName: '2. Veli Adı',
+      width: 130,
+    },
+    {
       field: 'notes',
       headerName: 'Notlar',
       width: 200,

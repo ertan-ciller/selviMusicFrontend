@@ -263,6 +263,34 @@ const StudentDetail = () => {
                     secondary={student.parentPhone || 'Belirtilmemiş'}
                   />
                 </ListItem>
+
+                {(student.secondParentName || student.secondParentPhone) && (
+                  <>
+                    <Divider sx={{ my: 1 }} />
+                    <ListItem>
+                      <ListItemAvatar>
+                        <Avatar sx={{ bgcolor: 'primary.main' }}>
+                          <PersonIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary="2. Veli Adı"
+                        secondary={student.secondParentName || 'Belirtilmemiş'}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemAvatar>
+                        <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                          <PhoneIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary="2. Veli Telefonu"
+                        secondary={student.secondParentPhone || 'Belirtilmemiş'}
+                      />
+                    </ListItem>
+                  </>
+                )}
               </List>
 
               <Divider sx={{ my: 3 }} />

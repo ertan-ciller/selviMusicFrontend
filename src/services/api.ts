@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://selvimusicbackend.onrender.com/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -16,9 +16,11 @@ export interface Teacher {
   lastName: string;
   email: string;
   phoneNumber: string;
-  instrument: string;
+  instrument: string; // kept for backward compatibility, optional usage
   experienceYears: number;
   bio: string;
+  lessonTypes?: LessonType[];
+  lessonTypeIds?: number[];
 }
 
 export interface Student {
@@ -32,6 +34,8 @@ export interface Student {
   skillLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
   parentName: string;
   parentPhone: string;
+  secondParentName?: string;
+  secondParentPhone?: string;
   notes: string;
   teacherId: number;
   teacherName?: string;
