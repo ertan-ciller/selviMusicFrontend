@@ -42,12 +42,8 @@ const StudentForm = () => {
     teacherId: 0,
   });
 
-  const skillLevels = [
-    { value: 'BEGINNER', label: 'Başlangıç' },
-    { value: 'INTERMEDIATE', label: 'Orta' },
-    { value: 'ADVANCED', label: 'İleri' },
-    { value: 'EXPERT', label: 'Uzman' },
-  ];
+  const [lessonDuration, setLessonDuration] = useState<'FULL' | 'HALF'>('FULL');
+
 
   useEffect(() => {
     fetchTeachers();
@@ -265,16 +261,13 @@ const StudentForm = () => {
                 <TextField
                   select
                   fullWidth
-                  label="Seviye *"
-                  value={formData.skillLevel}
-                  onChange={(e) => handleInputChange('skillLevel', e.target.value)}
+                  label="Ders Süresi *"
+                  value={lessonDuration}
+                  onChange={(e) => setLessonDuration(e.target.value as 'FULL' | 'HALF')}
                   required
                 >
-                  {skillLevels.map((level) => (
-                    <MenuItem key={level.value} value={level.value}>
-                      {level.label}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="FULL">Tam ders</MenuItem>
+                  <MenuItem value="HALF">Yarım ders</MenuItem>
                 </TextField>
                 <TextField
                   select

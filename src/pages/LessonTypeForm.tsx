@@ -113,7 +113,7 @@ const LessonTypeForm = () => {
                   value={formData.durationMinutes}
                   onChange={(e) => handleInputChange('durationMinutes', parseInt(e.target.value) || 0)}
                   required
-                  inputProps={{ min: 15, step: 15 }}
+                  inputProps={{ min: 10, step: 10 }}
                   placeholder="30"
                 />
               </Box>

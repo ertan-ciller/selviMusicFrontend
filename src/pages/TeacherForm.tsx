@@ -30,6 +30,7 @@ const TeacherForm = () => {
     instrument: '',
     experienceYears: 0,
     bio: '',
+    color: '#2980B9',
     lessonTypeIds: [],
   });
 
@@ -227,6 +228,34 @@ const TeacherForm = () => {
                     </MenuItem>
                   ))}
                 </TextField>
+              </Box>
+              <Box flex={1}>
+                <TextField
+                  fullWidth
+                  label="Renk Kodu"
+                  value={formData.color || ''}
+                  onChange={(e) => handleInputChange('color', e.target.value)}
+                  placeholder="#2980B9"
+                  helperText="HEX renk (ör. #FF5733). Sol taraftan da seçebilirsiniz."
+                  InputProps={{
+                    startAdornment: (
+                      <input
+                        type="color"
+                        value={formData.color || '#2980B9'}
+                        onChange={(e) => handleInputChange('color', e.target.value)}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          border: 'none',
+                          background: 'transparent',
+                          padding: 0,
+                          marginRight: 8,
+                          cursor: 'pointer',
+                        }}
+                      />
+                    ),
+                  }}
+                />
               </Box>
               <Box flex={1}>
                 <TextField

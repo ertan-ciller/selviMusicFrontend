@@ -9,6 +9,25 @@ const api = axios.create({
   },
 });
 
+// Global response error interceptor: extract backend message and propagate
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    try {
+      const backendMessage = error?.response?.data?.message
+        || error?.response?.data?.error
+        || (typeof error?.response?.data === 'string' ? error.response.data : '')
+        || error?.message
+        || 'Beklenmeyen bir hata oluştu';
+      const err: any = error || {};
+      err.message = backendMessage;
+      return Promise.reject(err);
+    } catch (_) {
+      return Promise.reject(error);
+    }
+  }
+);
+
 // Types
 export interface Teacher {
   id?: number;
@@ -16,11 +35,13 @@ export interface Teacher {
   lastName: string;
   email: string;
   phoneNumber: string;
-  instrument: string; // kept for backward compatibility, optional usage
+  instrument?: string;
   experienceYears: number;
   bio: string;
-  lessonTypes?: LessonType[];
+  color?: string;
+  // Optional relations/DTO fields
   lessonTypeIds?: number[];
+  lessonTypes?: LessonType[];
 }
 
 export interface Student {

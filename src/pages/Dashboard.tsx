@@ -83,9 +83,11 @@ const Dashboard = () => {
 
         // Enstrümanları topla
         const instruments = Array.from(
-          new Set([
-            ...teachers.map(t => t.instrument),
-            ...students.map(s => s.instrument)
+          new Set<string>([
+            ...teachers
+              .map((t) => t.instrument)
+              .filter((i): i is string => Boolean(i)),
+            ...students.map((s) => s.instrument),
           ])
         );
 

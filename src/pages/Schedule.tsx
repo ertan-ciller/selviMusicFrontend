@@ -33,7 +33,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   PersonOff as PersonOffIcon,
-  Schedule as ScheduleIcon,
+  Gavel as GavelIcon,
 } from '@mui/icons-material';
 import { format, startOfWeek, addWeeks, subWeeks, eachDayOfInterval } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -213,8 +213,12 @@ const Schedule: React.FC = () => {
       '#8E44AD', '#2980B9', '#27AE60', '#D35400', '#C0392B', '#16A085',
       '#2C3E50', '#7F8C8D', '#9B59B6', '#1ABC9C', '#F39C12', '#E74C3C',
     ];
-    const safeId = teacherId ?? 0;
-    const index = Math.abs(safeId) % palette.length;
+    if (!teacherId) return palette[0];
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (teacher && teacher.color && /^#([0-9a-fA-F]{3}){1,2}$/.test(teacher.color)) {
+      return teacher.color;
+    }
+    const index = Math.abs(teacherId) % palette.length;
     return palette[index];
   };
 
@@ -254,7 +258,8 @@ const Schedule: React.FC = () => {
         setSnackbar({ open: true, message: 'Ders başarıyla silindi', severity: 'success' });
         loadData();
       } catch (err) {
-        setSnackbar({ open: true, message: 'Ders silinirken hata oluştu', severity: 'error' });
+        const message = (err as any)?.message || 'Ders silinirken hata oluştu';
+        setSnackbar({ open: true, message, severity: 'error' });
       }
     }
   };
@@ -277,12 +282,13 @@ const Schedule: React.FC = () => {
       setOpenForm(false);
       loadData();
     } catch (err) {
-      setSnackbar({ open: true, message: 'İşlem sırasında hata oluştu', severity: 'error' });
+      const message = (err as any)?.message || 'İşlem sırasında hata oluştu';
+      setSnackbar({ open: true, message, severity: 'error' });
     }
   };
 
   // Ders tamamlama fonksiyonları
-  const handleMarkAttendance = async (schedule: LessonSchedule, status: 'COMPLETED' | 'CANCELLED' | 'ABSENT', lessonDate: Date) => {
+  const handleMarkAttendance = async (schedule: LessonSchedule, status: 'COMPLETED' | 'CANCELLED' | 'ABSENT' | 'RESCHEDULED', lessonDate: Date) => {
     try {
       const formattedDate = format(lessonDate, 'yyyy-MM-dd');
       
@@ -295,8 +301,9 @@ const Schedule: React.FC = () => {
         lessonScheduleId: schedule.id!,
         lessonDate: formattedDate,
         status,
-        notes: status === 'COMPLETED' ? 'Ders başarıyla tamamlandı' : 
-               status === 'CANCELLED' ? 'Ders iptal edildi' : 'Öğrenci devamsızlık yaptı'
+        notes: status === 'COMPLETED' ? 'Ders başarıyla tamamlandı' :
+               status === 'CANCELLED' ? 'Ders iptal edildi' :
+               status === 'ABSENT' ? 'Öğrenci devamsızlık yaptı' : 'İnsiyatif'
       };
 
       if (existingAttendance) {
@@ -309,7 +316,8 @@ const Schedule: React.FC = () => {
       
       loadData();
     } catch (err) {
-      setSnackbar({ open: true, message: 'Ders durumu kaydedilirken hata oluştu', severity: 'error' });
+      const message = (err as any)?.message || 'Ders durumu kaydedilirken hata oluştu';
+      setSnackbar({ open: true, message, severity: 'error' });
     }
   };
 
@@ -404,7 +412,8 @@ const Schedule: React.FC = () => {
                                   <Box sx={{ display: 'flex', gap: 0.2 }}>
                                     <Tooltip title="Dersi Tamamla"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'COMPLETED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><CheckCircleIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
                                     <Tooltip title="Dersi İptal Et"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'CANCELLED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><CancelIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
-                                    <Tooltip title="Devamsızlık"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'ABSENT', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><PersonOffIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
+                                    <Tooltip title="İnsiyatif"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'RESCHEDULED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><GavelIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
+                                    <Tooltip title="Dersi Yak"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'ABSENT', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><PersonOffIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
                                   </Box>
                                 </CardContent>
                               </Card>

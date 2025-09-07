@@ -13,6 +13,9 @@ import {
   Box,
 } from '@mui/material';
 import { LessonSchedule, Teacher, Student, Classroom } from '../services/api';
+import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { tr } from 'date-fns/locale';
 
 interface LessonFormProps {
   open: boolean;
@@ -74,6 +77,45 @@ const LessonForm: React.FC<LessonFormProps> = ({
       });
     }
   }, [schedule]);
+
+  const parseTime = (time: string | undefined): Date | null => {
+    if (!time) return null;
+    const [h, m] = time.split(':').map((n) => parseInt(n, 10));
+    const d = new Date();
+    d.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
+    return d;
+  };
+
+  const formatTime = (date: Date | null): string => {
+    if (!date) return '';
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
+  // Seçilen öğretmene göre ders türlerini filtrele
+  const selectedTeacher = teachers.find(t => t.id === formData.teacherId);
+  const filteredLessonTypes = React.useMemo(() => {
+    if (selectedTeacher && selectedTeacher.lessonTypes && selectedTeacher.lessonTypes.length > 0) {
+      const allowedIds = new Set((selectedTeacher.lessonTypes || []).map(lt => lt.id));
+      return lessonTypes.filter(lt => allowedIds.has(lt.id));
+    }
+    return lessonTypes;
+  }, [selectedTeacher, lessonTypes]);
+
+  // Öğretmen değiştiğinde geçerli ders türü seçilebilenler arasında değilse ilk uygun olanı seç
+  useEffect(() => {
+    if (!filteredLessonTypes || filteredLessonTypes.length === 0) return;
+    const isCurrentAllowed = filteredLessonTypes.some(lt => lt.value === formData.lessonType);
+    if (!isCurrentAllowed) {
+      const first = filteredLessonTypes[0];
+      setFormData(prev => ({
+        ...prev,
+        lessonType: first.value as any,
+        lessonTypeId: first.id,
+      }));
+    }
+  }, [filteredLessonTypes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,14 +209,14 @@ const LessonForm: React.FC<LessonFormProps> = ({
                     onChange={(e) => handleChange('lessonType', e.target.value)}
                     label="Ders Türü"
                   >
-                    {lessonTypes && lessonTypes.length > 0 ? (
-                      lessonTypes.map((type) => (
+                    {filteredLessonTypes && filteredLessonTypes.length > 0 ? (
+                      filteredLessonTypes.map((type) => (
                         <MenuItem key={type.value} value={type.value}>
                           {type.label}
                         </MenuItem>
                       ))
                     ) : (
-                      <MenuItem disabled>Ders türü bulunamadı</MenuItem>
+                      <MenuItem disabled>Seçilen öğretmen için ders türü bulunamadı</MenuItem>
                     )}
                   </Select>
                 </FormControl>
@@ -217,30 +259,32 @@ const LessonForm: React.FC<LessonFormProps> = ({
               </Box>
             </Box>
             
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Box sx={{ flex: 1, minWidth: 250 }}>
-                <TextField
-                  fullWidth
-                  label="Başlangıç Saati"
-                  type="time"
-                  value={formData.startTime || ''}
-                  onChange={(e) => handleChange('startTime', e.target.value)}
-                  required
-                  InputLabelProps={{ shrink: true }}
-                />
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={tr}>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ flex: 1, minWidth: 250 }}>
+                  <TimePicker
+                    ampm={false}
+                    label="Başlangıç Saati"
+                    value={parseTime(formData.startTime)}
+                    onChange={(newValue) => handleChange('startTime', formatTime(newValue))}
+                    views={["hours", "minutes"]}
+                    format="HH:mm"
+                    slotProps={{ textField: { fullWidth: true, required: true } }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 250 }}>
+                  <TimePicker
+                    ampm={false}
+                    label="Bitiş Saati"
+                    value={parseTime(formData.endTime)}
+                    onChange={(newValue) => handleChange('endTime', formatTime(newValue))}
+                    views={["hours", "minutes"]}
+                    format="HH:mm"
+                    slotProps={{ textField: { fullWidth: true, required: true } }}
+                  />
+                </Box>
               </Box>
-              <Box sx={{ flex: 1, minWidth: 250 }}>
-                <TextField
-                  fullWidth
-                  label="Bitiş Saati"
-                  type="time"
-                  value={formData.endTime || ''}
-                  onChange={(e) => handleChange('endTime', e.target.value)}
-                  required
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Box>
-            </Box>
+            </LocalizationProvider>
             
             <Box>
               <TextField
