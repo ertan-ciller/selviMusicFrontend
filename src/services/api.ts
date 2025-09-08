@@ -39,9 +39,19 @@ export interface Teacher {
   experienceYears: number;
   bio: string;
   color?: string;
+  notes?: string;
   // Optional relations/DTO fields
   lessonTypeIds?: number[];
   lessonTypes?: LessonType[];
+}
+
+// Teacher Note Types
+export interface TeacherNote {
+  id?: number;
+  teacherId: number;
+  content: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Student {
@@ -269,6 +279,14 @@ export const teacherAPI = {
   create: (teacher: Teacher) => api.post<Teacher>('/teachers', teacher),
   update: (id: number, teacher: Teacher) => api.put<Teacher>(`/teachers/${id}`, teacher),
   delete: (id: number) => api.delete(`/teachers/${id}`),
+};
+
+// Teacher Note API
+export const teacherNoteAPI = {
+  getByTeacherId: (teacherId: number) => api.get<TeacherNote[]>(`/teacher-notes/teacher/${teacherId}`),
+  create: (note: { teacherId: number; content: string }) => api.post<TeacherNote>('/teacher-notes', note),
+  update: (id: number, note: { content: string }) => api.put<TeacherNote>(`/teacher-notes/${id}`, note),
+  delete: (id: number) => api.delete(`/teacher-notes/${id}`),
 };
 
 // Student API

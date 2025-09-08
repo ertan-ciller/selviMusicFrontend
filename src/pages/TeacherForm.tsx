@@ -31,6 +31,7 @@ const TeacherForm = () => {
     experienceYears: 0,
     bio: '',
     color: '#2980B9',
+    notes: '',
     lessonTypeIds: [],
   });
 
@@ -277,6 +278,17 @@ const TeacherForm = () => {
                   value={formData.bio}
                   onChange={(e) => handleInputChange('bio', e.target.value)}
                   placeholder="Öğretmen hakkında kısa bilgi..."
+                />
+              </Box>
+              <Box flex={1}>
+                <TextField
+                  fullWidth
+                  label="Notlar"
+                  multiline
+                  rows={4}
+                  value={formData.notes || ''}
+                  onChange={(e) => handleInputChange('notes' as keyof Teacher, e.target.value)}
+                  placeholder="Bu öğretmene özel notlar..."
                 />
               </Box>
               <Box display="flex" gap={2} justifyContent="flex-end">
