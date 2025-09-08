@@ -40,6 +40,7 @@ const StudentForm = () => {
     secondParentPhone: '',
     notes: '',
     teacherId: 0,
+    status: 'ACTIVE',
   });
 
   const [lessonDuration, setLessonDuration] = useState<'FULL' | 'HALF'>('FULL');
@@ -268,6 +269,17 @@ const StudentForm = () => {
                 >
                   <MenuItem value="FULL">Tam ders</MenuItem>
                   <MenuItem value="HALF">Yarım ders</MenuItem>
+                </TextField>
+                <TextField
+                  select
+                  fullWidth
+                  label="Durum *"
+                  value={formData.status || 'ACTIVE'}
+                  onChange={(e) => handleInputChange('status' as any, e.target.value)}
+                  required
+                >
+                  <MenuItem value="ACTIVE">Aktif</MenuItem>
+                  <MenuItem value="PASSIVE">Pasif</MenuItem>
                 </TextField>
                 <TextField
                   select

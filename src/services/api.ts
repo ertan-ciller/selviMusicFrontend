@@ -70,6 +70,7 @@ export interface Student {
   notes: string;
   teacherId: number;
   teacherName?: string;
+  status?: 'ACTIVE' | 'PASSIVE';
 }
 
 export interface TeacherWithStudents extends Teacher {
@@ -296,6 +297,7 @@ export const studentAPI = {
   getByTeacher: (teacherId: number) => api.get<Student[]>(`/students/teacher/${teacherId}`),
   getByInstrument: (instrument: string) => api.get<Student[]>(`/students/instrument/${instrument}`),
   getBySkillLevel: (skillLevel: string) => api.get<Student[]>(`/students/skill-level/${skillLevel}`),
+  getByStatus: (status: 'ACTIVE' | 'PASSIVE') => api.get<Student[]>(`/students/status/${status}`),
   getByTeacherAndSkillLevel: (teacherId: number, skillLevel: string) =>
     api.get<Student[]>(`/students/teacher/${teacherId}/skill-level/${skillLevel}`),
   create: (student: Student) => api.post<Student>('/students', student),

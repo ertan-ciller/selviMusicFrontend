@@ -104,7 +104,7 @@ const Schedule: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [schedules, selectedTeacher, selectedStudent, selectedLessonType, selectedDay]);
+  }, [schedules, selectedTeacher, selectedStudent, selectedLessonType, selectedDay, students]);
 
   const loadData = async () => {
     try {
@@ -128,7 +128,13 @@ const Schedule: React.FC = () => {
   };
 
   const applyFilters = () => {
-    let filtered = [...schedules];
+    // Yalnızca aktif öğrencilerin dersleri
+    const activeStudentIds = new Set(
+      students
+        .filter(s => (s.status || 'ACTIVE') === 'ACTIVE' && s.id != null)
+        .map(s => s.id!)
+    );
+    let filtered = schedules.filter(schedule => activeStudentIds.has(schedule.studentId));
 
     if (selectedTeacher) {
       filtered = filtered.filter(schedule => schedule.teacherId === selectedTeacher);

@@ -29,6 +29,7 @@ const Students = () => {
   const [filterInstrument, setFilterInstrument] = useState<string>('');
   const [filterSkillLevel, setFilterSkillLevel] = useState<string>('');
   const [filterTeacher, setFilterTeacher] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,13 +54,13 @@ const Students = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Bu öğrenciyi silmek istediğinizden emin misiniz?')) {
+    if (window.confirm('Bu öğrenciyi pasif yapmak istediğinizden emin misiniz?')) {
       try {
         await studentAPI.delete(id);
-        setStudents(students.filter(student => student.id !== id));
+        setStudents(prev => prev.map(s => s.id === id ? { ...s, status: 'PASSIVE' } : s));
       } catch (err) {
-        setError('Öğrenci silinirken bir hata oluştu');
-        console.error('Delete student error:', err);
+        setError('Öğrenci pasif yapılırken bir hata oluştu');
+        console.error('Delete student (soft) error:', err);
       }
     }
   };
@@ -97,7 +98,8 @@ const Students = () => {
     const instrumentMatch = filterInstrument ? student.instrument === filterInstrument : true;
     const skillMatch = filterSkillLevel ? student.skillLevel === filterSkillLevel : true;
     const teacherMatch = filterTeacher ? student.teacherId.toString() === filterTeacher : true;
-    return instrumentMatch && skillMatch && teacherMatch;
+    const statusMatch = filterStatus ? (student.status || 'ACTIVE') === filterStatus : true;
+    return instrumentMatch && skillMatch && teacherMatch && statusMatch;
   });
 
   const instruments = Array.from(new Set(students.map(s => s.instrument)));
@@ -193,6 +195,19 @@ const Students = () => {
         <Typography variant="body2" noWrap>
           {params.value?.substring(0, 50)}...
         </Typography>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'Durum',
+      width: 110,
+      renderCell: (params) => (
+        <Chip
+          label={(params.value || 'ACTIVE') === 'ACTIVE' ? 'Aktif' : 'Pasif'}
+          size="small"
+          color={(params.value || 'ACTIVE') === 'ACTIVE' ? 'success' : 'default'}
+          variant="outlined"
+        />
       ),
     },
     {
@@ -299,6 +314,19 @@ const Students = () => {
                     {teacher.firstName} {teacher.lastName}
                   </MenuItem>
                 ))}
+              </TextField>
+            </Box>
+            <Box flex={1} minWidth={200}>
+              <TextField
+                select
+                fullWidth
+                label="Duruma Göre Filtrele"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <MenuItem value="">Tümü</MenuItem>
+                <MenuItem value="ACTIVE">Aktif</MenuItem>
+                <MenuItem value="PASSIVE">Pasif</MenuItem>
               </TextField>
             </Box>
             <Box>
