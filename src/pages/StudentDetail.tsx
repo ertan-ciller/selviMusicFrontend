@@ -15,6 +15,8 @@ import {
   ListItemText,
   ListItemAvatar,
   Paper,
+  TextField,
+  IconButton,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -26,9 +28,13 @@ import {
   MusicNote as MusicNoteIcon,
   CalendarToday as CalendarIcon,
   FamilyRestroom as FamilyIcon,
+  Delete as DeleteIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { studentAPI, Student } from '../services/api';
+import { studentAPI, Student, studentNoteAPI, StudentNote } from '../services/api';
 
 const StudentDetail = () => {
   const navigate = useNavigate();
@@ -36,6 +42,15 @@ const StudentDetail = () => {
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Notes (CRUD)
+  const [notes, setNotes] = useState<StudentNote[]>([]);
+  const [notesLoading, setNotesLoading] = useState<boolean>(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
+  const [newNote, setNewNote] = useState<string>('');
+  const [creatingNote, setCreatingNote] = useState<boolean>(false);
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
+  const [editingContent, setEditingContent] = useState<string>('');
 
   useEffect(() => {
     if (id) {
@@ -48,12 +63,86 @@ const StudentDetail = () => {
       setLoading(true);
       const response = await studentAPI.getById(studentId);
       setStudent(response.data);
+      fetchNotes(studentId);
     } catch (err) {
       setError('Öğrenci bilgileri yüklenirken bir hata oluştu');
       console.error('Student details fetch error:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchNotes = async (studentId: number) => {
+    try {
+      setNotesError(null);
+      setNotesLoading(true);
+      const res = await studentNoteAPI.getByStudentId(studentId);
+      setNotes(res.data || []);
+    } catch (err) {
+      setNotesError('Notlar yüklenemedi');
+      console.error('Fetch student notes error:', err);
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
+  const handleCreateNote = async () => {
+    if (!student?.id) return;
+    const content = (newNote || '').trim();
+    if (!content) return;
+    try {
+      setCreatingNote(true);
+      const res = await studentNoteAPI.create({ studentId: student.id, content });
+      setNewNote('');
+      setNotes((prev) => [res.data, ...prev]);
+    } catch (err) {
+      console.error('Create student note error:', err);
+    } finally {
+      setCreatingNote(false);
+    }
+  };
+
+  const startEditNote = (note: StudentNote) => {
+    setEditingNoteId(note.id!);
+    setEditingContent(note.content);
+  };
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null);
+    setEditingContent('');
+  };
+
+  const handleUpdateNote = async (id: number) => {
+    const content = (editingContent || '').trim();
+    if (!content) return;
+    try {
+      const res = await studentNoteAPI.update(id, { content });
+      setNotes((prev) => prev.map((n) => (n.id === id ? res.data : n)));
+      cancelEditNote();
+    } catch (err) {
+      console.error('Update student note error:', err);
+    }
+  };
+
+  const handleDeleteNote = async (id: number) => {
+    try {
+      await studentNoteAPI.delete(id);
+      setNotes((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error('Delete student note error:', err);
+    }
+  };
+
+  // Helpers
+  const formatDateTime24 = (value?: string) => {
+    if (!value) return '';
+    const d = new Date(value);
+    return d.toLocaleString('tr-TR', { hour12: false });
+  };
+  const formatTimeHHMM = (value?: string) => {
+    if (!value) return '';
+    const d = new Date(value);
+    return d.toLocaleTimeString('tr-TR', { hour12: false, hour: '2-digit', minute: '2-digit' });
   };
 
   const getSkillLevelLabel = (level: string) => {
@@ -353,6 +442,92 @@ const StudentDetail = () => {
             </CardContent>
           </Card>
         </Box>
+      </Box>
+
+      {/* Öğrenci Notları (Liste / Ekle / Düzenle / Sil) */}
+      <Box mt={3}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Öğrenci Notları
+            </Typography>
+            <Box display="flex" gap={1} alignItems="flex-start" mb={2}>
+              <TextField
+                fullWidth
+                multiline
+                minRows={2}
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Yeni not / hatırlatma ekleyin"
+              />
+              <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateNote} disabled={creatingNote || !newNote.trim()}>
+                {creatingNote ? 'Ekleniyor...' : 'Ekle'}
+              </Button>
+            </Box>
+
+            {notesError && (
+              <Alert severity="error" sx={{ mb: 2 }}>{notesError}</Alert>
+            )}
+            {notesLoading ? (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="100px">
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <List>
+                {notes.length === 0 && (
+                  <Typography variant="body2" color="textSecondary">Henüz not bulunmuyor</Typography>
+                )}
+                {notes.map((note) => (
+                  <ListItem key={note.id} alignItems="flex-start" sx={{ borderBottom: '1px solid #eee' }
+                    } secondaryAction={
+                      editingNoteId === note.id ? (
+                        <Box>
+                          <IconButton aria-label="kaydet" onClick={() => handleUpdateNote(note.id!)}>
+                            <SaveIcon />
+                          </IconButton>
+                          <IconButton aria-label="iptal" onClick={cancelEditNote}>
+                            <CancelIcon />
+                          </IconButton>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <IconButton aria-label="düzenle" onClick={() => startEditNote(note)}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton aria-label="sil" onClick={() => handleDeleteNote(note.id!)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                      )
+                    }
+                  >
+                    <ListItemAvatar>
+                      <Avatar>
+                        {formatTimeHHMM(note.createdAt) || '—'}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={formatDateTime24(note.createdAt || note.updatedAt || '')}
+                      secondary={
+                        editingNoteId === note.id ? (
+                          <TextField
+                            fullWidth
+                            multiline
+                            minRows={2}
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                          />
+                        ) : (
+                          <Typography variant="body2" color="textSecondary">{note.content}</Typography>
+                        )
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </CardContent>
+        </Card>
       </Box>
     </Box>
   );

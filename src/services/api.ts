@@ -73,6 +73,14 @@ export interface Student {
   status?: 'ACTIVE' | 'PASSIVE';
 }
 
+export interface StudentNote {
+  id?: number;
+  studentId: number;
+  content: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface TeacherWithStudents extends Teacher {
   students: Student[];
 }
@@ -288,6 +296,14 @@ export const teacherNoteAPI = {
   create: (note: { teacherId: number; content: string }) => api.post<TeacherNote>('/teacher-notes', note),
   update: (id: number, note: { content: string }) => api.put<TeacherNote>(`/teacher-notes/${id}`, note),
   delete: (id: number) => api.delete(`/teacher-notes/${id}`),
+};
+
+// Student Note API
+export const studentNoteAPI = {
+  getByStudentId: (studentId: number) => api.get<StudentNote[]>(`/student-notes/student/${studentId}`),
+  create: (note: { studentId: number; content: string }) => api.post<StudentNote>('/student-notes', note),
+  update: (id: number, note: { content: string }) => api.put<StudentNote>(`/student-notes/${id}`, note),
+  delete: (id: number) => api.delete(`/student-notes/${id}`),
 };
 
 // Student API
