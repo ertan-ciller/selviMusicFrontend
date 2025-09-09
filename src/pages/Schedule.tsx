@@ -18,6 +18,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
   Alert,
   Snackbar,
   Tooltip,
@@ -42,6 +45,8 @@ import LessonForm from '../components/LessonForm';
 import ScheduleFilters from '../components/ScheduleFilters';
 import ScheduleStats from '../components/ScheduleStats';
 
+type ChangeableStatus = 'COMPLETED' | 'CANCELLED' | 'ABSENT' | 'RESCHEDULED';
+
 const Schedule: React.FC = () => {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
 
@@ -60,6 +65,15 @@ const Schedule: React.FC = () => {
     message: '',
     severity: 'success',
   });
+
+  // Status change dialog state
+  const [statusDialog, setStatusDialog] = useState<{
+    open: boolean;
+    schedule: LessonSchedule | null;
+    date: Date | null;
+    current: LessonAttendance['status'] | null;
+    selected: ChangeableStatus | null;
+  }>({ open: false, schedule: null, date: null, current: null, selected: null });
 
   // Filter states
   const [selectedTeacher, setSelectedTeacher] = useState<number | null>(null);
@@ -293,7 +307,7 @@ const Schedule: React.FC = () => {
     }
   };
 
-  // Ders tamamlama fonksiyonları
+  // Ders durumunu kaydetme
   const handleMarkAttendance = async (schedule: LessonSchedule, status: 'COMPLETED' | 'CANCELLED' | 'ABSENT' | 'RESCHEDULED', lessonDate: Date) => {
     try {
       const formattedDate = format(lessonDate, 'yyyy-MM-dd');
@@ -325,6 +339,23 @@ const Schedule: React.FC = () => {
       const message = (err as any)?.message || 'Ders durumu kaydedilirken hata oluştu';
       setSnackbar({ open: true, message, severity: 'error' });
     }
+  };
+
+  const openStatusChangeDialog = (schedule: LessonSchedule, lessonDate: Date, current: LessonAttendance['status'] | null) => {
+    const selectable: ChangeableStatus | null =
+      current === 'COMPLETED' || current === 'CANCELLED' || current === 'ABSENT' || current === 'RESCHEDULED'
+        ? current
+        : null;
+    setStatusDialog({ open: true, schedule, date: lessonDate, current, selected: selectable });
+  };
+
+  const confirmStatusChange = async () => {
+    if (!statusDialog.open || !statusDialog.schedule || !statusDialog.date || !statusDialog.selected) {
+      setStatusDialog({ open: false, schedule: null, date: null, current: null, selected: null });
+      return;
+    }
+    await handleMarkAttendance(statusDialog.schedule, statusDialog.selected as ChangeableStatus, statusDialog.date);
+    setStatusDialog({ open: false, schedule: null, date: null, current: null, selected: null });
   };
 
   const getAttendanceStatus = (scheduleId: number, lessonDate: Date): LessonAttendance['status'] | null => {
@@ -363,6 +394,43 @@ const Schedule: React.FC = () => {
       default:
         return 'Planlandı';
     }
+  };
+
+  // Diyalogda aksiyon isimleri için (chip aksiyon etiketleriyle aynı)
+  const getAttendanceActionLabel = (status: ChangeableStatus) => {
+    switch (status) {
+      case 'RESCHEDULED':
+        return 'İnsiyatif';
+      case 'ABSENT':
+        return 'Dersi Yak';
+      case 'COMPLETED':
+        return 'Tamamla';
+      case 'CANCELLED':
+        return 'İptal';
+    }
+  };
+
+  const renderStatusBadge = (status: ChangeableStatus) => {
+    const bg = getAttendanceStatusColor(status);
+    const IconComp =
+      status === 'COMPLETED' ? CheckCircleIcon :
+      status === 'CANCELLED' ? CancelIcon :
+      status === 'RESCHEDULED' ? GavelIcon : PersonOffIcon;
+    return (
+      <Box sx={{
+        width: 18,
+        height: 18,
+        borderRadius: '50%',
+        backgroundColor: bg,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 0 0 2px rgba(255,255,255,0.9)',
+        flex: '0 0 auto',
+      }}>
+        <IconComp sx={{ fontSize: '0.9rem', color: '#ffffff' }} />
+      </Box>
+    );
   };
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -409,17 +477,62 @@ const Schedule: React.FC = () => {
                       </Box>
                       {hours.map(h => {
                         const scheduleForThisTime = getScheduleForSlot(dayKey, c.id, h);
+                        const currentStatus = scheduleForThisTime ? getAttendanceStatus(scheduleForThisTime.id!, weekDates[dayIndex]) : null;
+                        const statusColor = currentStatus ? getAttendanceStatusColor(currentStatus) : undefined;
                         return (
                           <Box key={`${c.id}-${h}`}>
                             {scheduleForThisTime ? (
-                              <Card sx={{ backgroundColor: getTeacherColor(scheduleForThisTime.teacherId), color: 'white' }}>
+                              <Card sx={{
+                                backgroundColor: getTeacherColor(scheduleForThisTime.teacherId),
+                                color: 'white',
+                                border: currentStatus ? `2px solid ${statusColor}` : '1px solid transparent',
+                                opacity: 1,
+                                position: 'relative',
+                              }}>
                                 <CardContent sx={{ p: 0.3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', '&:last-child': { pb: 0.3 } }}>
-                                  <Typography variant="caption" sx={{ fontSize: '0.64rem', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{getStudentName(scheduleForThisTime.studentId)}</Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flex: 1 }}>
+                                    {currentStatus && (
+                                      <Tooltip title={getAttendanceStatusText(currentStatus)}>
+                                        {renderStatusBadge(currentStatus as ChangeableStatus)}
+                                      </Tooltip>
+                                    )}
+                                    <Tooltip title={getStudentName(scheduleForThisTime.studentId)}>
+                                      <Typography variant="caption" sx={{ fontSize: '0.64rem', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                        {getStudentName(scheduleForThisTime.studentId)}
+                                      </Typography>
+                                    </Tooltip>
+                                  </Box>
                                   <Box sx={{ display: 'flex', gap: 0.2 }}>
-                                    <Tooltip title="Dersi Tamamla"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'COMPLETED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><CheckCircleIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
-                                    <Tooltip title="Dersi İptal Et"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'CANCELLED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><CancelIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
-                                    <Tooltip title="İnsiyatif"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'RESCHEDULED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><GavelIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
-                                    <Tooltip title="Dersi Yak"><IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'ABSENT', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}><PersonOffIcon sx={{ fontSize: '0.9rem' }} /></IconButton></Tooltip>
+                                    {currentStatus ? (
+                                      <Tooltip title="Durumu değiştir">
+                                        <IconButton size="small" onClick={() => openStatusChangeDialog(scheduleForThisTime, weekDates[dayIndex], currentStatus)} sx={{ color: 'white', p: 0.15 }}>
+                                          <EditIcon sx={{ fontSize: '0.9rem' }} />
+                                        </IconButton>
+                                      </Tooltip>
+                                    ) : (
+                                      <>
+                                        <Tooltip title="Dersi Tamamla">
+                                          <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'COMPLETED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
+                                            <CheckCircleIcon sx={{ fontSize: '0.9rem' }} />
+                                          </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Dersi İptal Et">
+                                          <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'CANCELLED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
+                                            <CancelIcon sx={{ fontSize: '0.9rem' }} />
+                                          </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="İnsiyatif">
+                                          <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'RESCHEDULED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
+                                            <GavelIcon sx={{ fontSize: '0.9rem' }} />
+                                          </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Dersi Yak">
+                                          <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'ABSENT', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
+                                            <PersonOffIcon sx={{ fontSize: '0.9rem' }} />
+                                          </IconButton>
+                                        </Tooltip>
+                                      </>
+                                    )}
                                   </Box>
                                 </CardContent>
                               </Card>
@@ -524,6 +637,30 @@ const Schedule: React.FC = () => {
         lessonTypes={lessonTypes}
         classrooms={classrooms}
       />
+      {/* Status Change Dialog */}
+      <Dialog open={statusDialog.open} onClose={() => setStatusDialog({ open: false, schedule: null, date: null, current: null, selected: null })} maxWidth="xs" fullWidth>
+        <DialogTitle>Ders Durumunu Değiştir</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            {statusDialog.schedule ? getStudentName(statusDialog.schedule.studentId) : ''}
+          </Typography>
+          <FormControl>
+            <RadioGroup
+              value={statusDialog.selected || ''}
+              onChange={(e) => setStatusDialog(prev => ({ ...prev, selected: (e.target as HTMLInputElement).value as ChangeableStatus }))}
+            >
+              <FormControlLabel value="RESCHEDULED" control={<Radio />} label={getAttendanceActionLabel('RESCHEDULED')} />
+              <FormControlLabel value="ABSENT" control={<Radio />} label={getAttendanceActionLabel('ABSENT')} />
+              <FormControlLabel value="COMPLETED" control={<Radio />} label={getAttendanceActionLabel('COMPLETED')} />
+              <FormControlLabel value="CANCELLED" control={<Radio />} label={getAttendanceActionLabel('CANCELLED')} />
+            </RadioGroup>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setStatusDialog({ open: false, schedule: null, date: null, current: null, selected: null })}>Vazgeç</Button>
+          <Button variant="contained" onClick={confirmStatusChange} disabled={!statusDialog.selected}>Kaydet</Button>
+        </DialogActions>
+      </Dialog>
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
