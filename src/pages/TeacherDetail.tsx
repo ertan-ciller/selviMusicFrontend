@@ -34,7 +34,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { teacherAPI, Teacher, Student, financialTransactionAPI, FinancialTransaction, teacherNoteAPI, TeacherNote } from '../services/api';
+import { teacherAPI, Teacher, Student, financialTransactionAPI, FinancialTransaction, teacherNoteAPI, TeacherNote, lessonAttendanceAPI, LessonAttendance } from '../services/api';
 
 interface TeacherWithStudents extends Teacher {
   students: Student[];
@@ -112,6 +112,83 @@ const TeacherDetail = () => {
       setTransactionsLoading(false);
     }
   };
+
+  // Attendance & Summary (Teacher-centric)
+  const [attendances, setAttendances] = useState<LessonAttendance[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState<boolean>(false);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const defaultStart = `${yyyy}-${mm}-01`;
+  const defaultEnd = `${yyyy}-${mm}-${dd}`;
+  const [startDate, setStartDate] = useState<string>(defaultStart);
+  const [endDate, setEndDate] = useState<string>(defaultEnd);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchAttendances(parseInt(id), startDate, endDate);
+  }, [id, startDate, endDate]);
+
+  const fetchAttendances = async (teacherId: number, start: string, end: string) => {
+    try {
+      setAttendanceError(null);
+      setAttendanceLoading(true);
+      const res = await lessonAttendanceAPI.getByTeacherIdAndDateRange(teacherId, start, end);
+      setAttendances(res.data || []);
+    } catch (err: any) {
+      setAttendanceError(err?.message || 'Ders katılım bilgileri yüklenemedi');
+      console.error('Fetch teacher attendances error:', err);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  const formatDateYMDToTR = (ymd?: string) => {
+    if (!ymd) return '';
+    const d = new Date(ymd);
+    if (Number.isNaN(d.getTime())) return ymd;
+    return d.toLocaleDateString('tr-TR');
+  };
+
+  const getAttendanceStatusLabel = (status: LessonAttendance['status']) => {
+    switch (status) {
+      case 'COMPLETED': return 'Tamamlandı';
+      case 'CANCELLED': return 'İptal';
+      case 'ABSENT': return 'Devamsız';
+      case 'RESCHEDULED': return 'Yeniden Planlandı';
+      case 'SCHEDULED': return 'Planlandı';
+      default: return status as string;
+    }
+  };
+
+  const getAttendanceStatusColor = (status: LessonAttendance['status']) => {
+    switch (status) {
+      case 'COMPLETED': return 'success';
+      case 'CANCELLED': return 'default';
+      case 'ABSENT': return 'error';
+      case 'RESCHEDULED': return 'warning';
+      case 'SCHEDULED': return 'info';
+      default: return 'default';
+    }
+  };
+
+  const formatCurrencyTRY = (value?: number | null) => {
+    if (value === undefined || value === null) return '—';
+    try {
+      return value.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+    } catch {
+      return `${value} ₺`;
+    }
+  };
+
+  const completedAttendances = attendances.filter((a) => a.status === 'COMPLETED');
+  const cancelledAttendances = attendances.filter((a) => a.status === 'CANCELLED');
+  const absentAttendances = attendances.filter((a) => a.status === 'ABSENT');
+  const totalCompletedAmount = completedAttendances.reduce((sum, a) => sum + (a.lessonPrice || 0), 0);
+  const totalTeacherCommission = completedAttendances.reduce((sum, a) => sum + (a.teacherCommission || 0), 0);
+  const totalSchoolShare = completedAttendances.reduce((sum, a) => sum + (a.musicSchoolShare || 0), 0);
 
   const fetchNotes = async (teacherId: number) => {
     try {
@@ -473,6 +550,97 @@ const TeacherDetail = () => {
                   </ListItem>
                 ))}
               </List>
+            )}
+          </CardContent>
+        </Card>
+      </Box>
+
+      {/* Ders Katılımı ve Ücretlendirme (Öğretmen) */}
+      <Box mt={3}>
+        <Card>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6">Ders Katılımı ve Ücretlendirme</Typography>
+            </Box>
+
+            <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
+              <Chip label={`Tamamlanan: ${completedAttendances.length}`} color="success" variant="outlined" />
+              <Chip label={`İptal: ${cancelledAttendances.length}`} variant="outlined" />
+              <Chip label={`Devamsız: ${absentAttendances.length}`} color="error" variant="outlined" />
+              <Chip label={`Toplam Tutar: ${formatCurrencyTRY(totalCompletedAmount)}`} color="primary" />
+              <Chip label={`Öğretmen Payı: ${formatCurrencyTRY(totalTeacherCommission)}`} color="success" />
+              <Chip label={`Müzik Evi Payı: ${formatCurrencyTRY(totalSchoolShare)}`} color="warning" />
+            </Box>
+
+            <Box display="flex" gap={2} alignItems={{ xs: 'stretch', md: 'center' }} mb={2}>
+              <TextField
+                label="Başlangıç"
+                type="date"
+                size="small"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Bitiş"
+                type="date"
+                size="small"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => teacher?.id && fetchAttendances(teacher.id, startDate, endDate)}
+              >
+                Yenile
+              </Button>
+            </Box>
+
+            {attendanceError && (
+              <Alert severity="error" sx={{ mb: 2 }}>{attendanceError}</Alert>
+            )}
+
+            {attendanceLoading ? (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="120px">
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <Box sx={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Tarih</th>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Ders</th>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Durum</th>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Not</th>
+                      <th style={{ textAlign: 'right', padding: 8 }}>Ders Ücreti</th>
+                      <th style={{ textAlign: 'right', padding: 8 }}>Öğretmen Payı</th>
+                      <th style={{ textAlign: 'right', padding: 8 }}>Müzik Evi Payı</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendances.length === 0 && (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: 12 }}>Kayıt bulunamadı</td>
+                      </tr>
+                    )}
+                    {attendances.map((a) => (
+                      <tr key={a.id}>
+                        <td style={{ padding: 8 }}>{formatDateYMDToTR(a.lessonDate)}</td>
+                        <td style={{ padding: 8 }}>{a.lessonTypeName || a.lessonTypeId || '—'}</td>
+                        <td style={{ padding: 8 }}>
+                          <Chip size="small" label={getAttendanceStatusLabel(a.status)} color={getAttendanceStatusColor(a.status) as any} />
+                        </td>
+                        <td style={{ padding: 8 }}>{a.notes || '—'}</td>
+                        <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.lessonPrice)}</td>
+                        <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.teacherCommission)}</td>
+                        <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.musicSchoolShare)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Box>
             )}
           </CardContent>
         </Card>
