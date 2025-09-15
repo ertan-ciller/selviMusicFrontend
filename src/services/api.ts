@@ -182,8 +182,15 @@ export interface LessonSchedule {
 export interface LessonAttendance {
   id?: number;
   lessonScheduleId: number;
+  lessonTypeId?: number;
+  lessonTypeName?: string;
   lessonDate: string; // YYYY-MM-DD format
   status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'ABSENT' | 'RESCHEDULED';
+  lessonPrice?: number;
+  teacherCommission?: number;
+  musicSchoolShare?: number;
+  isPaid?: boolean;
+  paymentDate?: string; // ISO datetime
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -428,6 +435,7 @@ export const lessonAttendanceAPI = {
   update: (id: number, request: CreateLessonAttendanceRequest) => 
     api.put<LessonAttendance>(`/lesson_attendances/${id}`, request),
   delete: (id: number) => api.delete(`/lesson_attendances/${id}`),
+  markAsPaid: (id: number) => api.post<LessonAttendance>(`/lesson_attendances/${id}/pay`),
 };
 
 // Financial Transaction API

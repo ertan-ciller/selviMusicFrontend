@@ -7,6 +7,12 @@ import {
   CircularProgress,
   Card,
   CardContent,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Stack,
   Chip,
   Avatar,
   Divider,
@@ -32,9 +38,11 @@ import {
   Save as SaveIcon,
   Cancel as CancelIcon,
   Add as AddIcon,
+  Paid as PaidIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { studentAPI, Student, studentNoteAPI, StudentNote } from '../services/api';
+import { studentAPI, Student, studentNoteAPI, StudentNote, lessonAttendanceAPI, LessonAttendance } from '../services/api';
 
 const StudentDetail = () => {
   const navigate = useNavigate();
@@ -51,6 +59,19 @@ const StudentDetail = () => {
   const [creatingNote, setCreatingNote] = useState<boolean>(false);
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState<string>('');
+
+  // Attendance & Pricing state
+  const [attendances, setAttendances] = useState<LessonAttendance[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState<boolean>(false);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const defaultStart = `${yyyy}-${mm}-01`;
+  const defaultEnd = `${yyyy}-${mm}-${dd}`;
+  const [startDate, setStartDate] = useState<string>(defaultStart);
+  const [endDate, setEndDate] = useState<string>(defaultEnd);
 
   useEffect(() => {
     if (id) {
@@ -69,6 +90,37 @@ const StudentDetail = () => {
       console.error('Student details fetch error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Attendance fetch
+  useEffect(() => {
+    if (!id) return;
+    fetchAttendances(parseInt(id), startDate, endDate);
+  }, [id, startDate, endDate]);
+
+  const fetchAttendances = async (studentId: number, start: string, end: string) => {
+    try {
+      setAttendanceError(null);
+      setAttendanceLoading(true);
+      const res = await lessonAttendanceAPI.getByStudentIdAndDateRange(studentId, start, end);
+      setAttendances(res.data || []);
+    } catch (err: any) {
+      setAttendanceError(err?.message || 'Ders katılım bilgileri yüklenemedi');
+      console.error('Fetch attendances error:', err);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  const markAttendancePaid = async (attendanceId: number) => {
+    try {
+      const res = await lessonAttendanceAPI.markAsPaid(attendanceId);
+      const updated = res.data;
+      setAttendances((prev) => prev.map((a) => (a.id === attendanceId ? { ...a, ...updated } : a)));
+    } catch (err: any) {
+      console.error('Mark as paid error:', err);
+      alert(err?.message || 'Ödeme işaretlenemedi');
     }
   };
 
@@ -164,6 +216,52 @@ const StudentDetail = () => {
       default: return 'default';
     }
   };
+
+  // Attendance helpers and aggregates
+  const formatDateYMDToTR = (ymd?: string) => {
+    if (!ymd) return '';
+    const d = new Date(ymd);
+    if (Number.isNaN(d.getTime())) return ymd;
+    return d.toLocaleDateString('tr-TR');
+  };
+
+  const getAttendanceStatusLabel = (status: LessonAttendance['status']) => {
+    switch (status) {
+      case 'COMPLETED': return 'Tamamlandı';
+      case 'CANCELLED': return 'İptal';
+      case 'ABSENT': return 'Devamsız';
+      case 'RESCHEDULED': return 'Yeniden Planlandı';
+      case 'SCHEDULED': return 'Planlandı';
+      default: return status as string;
+    }
+  };
+
+  const getAttendanceStatusColor = (status: LessonAttendance['status']) => {
+    switch (status) {
+      case 'COMPLETED': return 'success';
+      case 'CANCELLED': return 'default';
+      case 'ABSENT': return 'error';
+      case 'RESCHEDULED': return 'warning';
+      case 'SCHEDULED': return 'info';
+      default: return 'default';
+    }
+  };
+
+  const formatCurrencyTRY = (value?: number | null) => {
+    if (value === undefined || value === null) return '—';
+    try {
+      return value.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+    } catch {
+      return `${value} ₺`;
+    }
+  };
+
+  const completedAttendances = attendances.filter((a) => a.status === 'COMPLETED');
+  const cancelledAttendances = attendances.filter((a) => a.status === 'CANCELLED');
+  const absentAttendances = attendances.filter((a) => a.status === 'ABSENT');
+  const totalCompletedAmount = completedAttendances.reduce((sum, a) => sum + (a.lessonPrice || 0), 0);
+  const totalPaidAmount = completedAttendances.filter((a) => a.isPaid).reduce((sum, a) => sum + (a.lessonPrice || 0), 0);
+  const totalUnpaidAmount = totalCompletedAmount - totalPaidAmount;
 
   if (loading) {
     return (
@@ -442,6 +540,122 @@ const StudentDetail = () => {
             </CardContent>
           </Card>
         </Box>
+      </Box>
+
+      {/* Ders Katılımı ve Ücretlendirme */}
+      <Box mt={3}>
+        <Card>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6">Ders Katılımı ve Ücretlendirme</Typography>
+            </Box>
+
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }} mb={2}>
+              <TextField
+                label="Başlangıç"
+                type="date"
+                size="small"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Bitiş"
+                type="date"
+                size="small"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={() => student?.id && fetchAttendances(student.id, startDate, endDate)}
+              >
+                Yenile
+              </Button>
+            </Stack>
+
+            {/* Summary */}
+            <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
+              <Chip label={`Tamamlanan: ${completedAttendances.length}`} color="success" variant="outlined" />
+              <Chip label={`İptal: ${cancelledAttendances.length}`} variant="outlined" />
+              <Chip label={`Devamsız: ${absentAttendances.length}`} color="error" variant="outlined" />
+              <Chip label={`Tutar: ${formatCurrencyTRY(totalCompletedAmount)}`} color="primary" />
+              <Chip label={`Ödenen: ${formatCurrencyTRY(totalPaidAmount)}`} color="success" />
+              <Chip label={`Kalan: ${formatCurrencyTRY(totalUnpaidAmount)}`} color="warning" />
+            </Box>
+
+            {attendanceError && (
+              <Alert severity="error" sx={{ mb: 2 }}>{attendanceError}</Alert>
+            )}
+
+            {attendanceLoading ? (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="120px">
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <Box sx={{ overflowX: 'auto' }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Tarih</TableCell>
+                      <TableCell>Ders</TableCell>
+                      <TableCell>Durum</TableCell>
+                      <TableCell>Not</TableCell>
+                      <TableCell align="right">Ders Ücreti</TableCell>
+                      <TableCell align="right">Öğretmen Payı</TableCell>
+                      <TableCell align="right">Müzik Evi Payı</TableCell>
+                      <TableCell align="center">Ödeme</TableCell>
+                      <TableCell align="right">İşlemler</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {attendances.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={9} align="center">Kayıt bulunamadı</TableCell>
+                      </TableRow>
+                    )}
+                    {attendances.map((a) => {
+                      const canPay = a.status === 'COMPLETED' && !a.isPaid;
+                      return (
+                        <TableRow key={a.id} hover>
+                          <TableCell>{formatDateYMDToTR(a.lessonDate)}</TableCell>
+                          <TableCell>{a.lessonTypeName || a.lessonTypeId || '—'}</TableCell>
+                          <TableCell>
+                            <Chip size="small" label={getAttendanceStatusLabel(a.status)} color={getAttendanceStatusColor(a.status) as any} />
+                          </TableCell>
+                          <TableCell>{a.notes || '—'}</TableCell>
+                          <TableCell align="right">{formatCurrencyTRY(a.lessonPrice)}</TableCell>
+                          <TableCell align="right">{formatCurrencyTRY(a.teacherCommission)}</TableCell>
+                          <TableCell align="right">{formatCurrencyTRY(a.musicSchoolShare)}</TableCell>
+                          <TableCell align="center">
+                            {a.status === 'COMPLETED' ? (
+                              a.isPaid ? (
+                                <Chip size="small" color="success" label={`Ödendi (${formatDateTime24(a.paymentDate)})`} />
+                              ) : (
+                                <Chip size="small" color="warning" label="Ödenmedi" />
+                              )
+                            ) : (
+                              <Chip size="small" label="—" />
+                            )}
+                          </TableCell>
+                          <TableCell align="right">
+                            {canPay && (
+                              <Button size="small" startIcon={<PaidIcon />} onClick={() => markAttendancePaid(a.id!)}>
+                                Ödeme Alındı
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
       </Box>
 
       {/* Öğrenci Notları (Liste / Ekle / Düzenle / Sil) */}
