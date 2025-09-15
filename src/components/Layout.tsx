@@ -25,6 +25,7 @@ import {
   Payment as PaymentIcon,
   CalendarToday as CalendarIcon,
   Category as CategoryIcon,
+  Insights as InsightsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -51,6 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Ücretlendirme', icon: <MoneyIcon />, path: '/pricing' },
     { text: 'Satışlar', icon: <CartIcon />, path: '/sales' },
     { text: 'Ders Ödemeleri', icon: <PaymentIcon />, path: '/lesson-payments' },
+    { text: 'Ders Analitiği', icon: <InsightsIcon />, path: '/lesson-analytics' },
   ];
 
   const handleDrawerToggle = () => {

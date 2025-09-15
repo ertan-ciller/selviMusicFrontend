@@ -188,7 +188,6 @@ const TeacherDetail = () => {
   const absentAttendances = attendances.filter((a) => a.status === 'ABSENT');
   const totalCompletedAmount = completedAttendances.reduce((sum, a) => sum + (a.lessonPrice || 0), 0);
   const totalTeacherCommission = completedAttendances.reduce((sum, a) => sum + (a.teacherCommission || 0), 0);
-  const totalSchoolShare = completedAttendances.reduce((sum, a) => sum + (a.musicSchoolShare || 0), 0);
 
   const fetchNotes = async (teacherId: number) => {
     try {
@@ -568,8 +567,7 @@ const TeacherDetail = () => {
               <Chip label={`İptal: ${cancelledAttendances.length}`} variant="outlined" />
               <Chip label={`Devamsız: ${absentAttendances.length}`} color="error" variant="outlined" />
               <Chip label={`Toplam Tutar: ${formatCurrencyTRY(totalCompletedAmount)}`} color="primary" />
-              <Chip label={`Öğretmen Payı: ${formatCurrencyTRY(totalTeacherCommission)}`} color="success" />
-              <Chip label={`Müzik Evi Payı: ${formatCurrencyTRY(totalSchoolShare)}`} color="warning" />
+              <Chip label={`Öğretmen Ücreti: ${formatCurrencyTRY(totalTeacherCommission)}`} color="success" />
             </Box>
 
             <Box display="flex" gap={2} alignItems={{ xs: 'stretch', md: 'center' }} mb={2}>
@@ -615,14 +613,13 @@ const TeacherDetail = () => {
                       <th style={{ textAlign: 'left', padding: 8 }}>Durum</th>
                       <th style={{ textAlign: 'left', padding: 8 }}>Not</th>
                       <th style={{ textAlign: 'right', padding: 8 }}>Ders Ücreti</th>
-                      <th style={{ textAlign: 'right', padding: 8 }}>Öğretmen Payı</th>
-                      <th style={{ textAlign: 'right', padding: 8 }}>Müzik Evi Payı</th>
+                      <th style={{ textAlign: 'right', padding: 8 }}>Öğretmen Ücreti</th>
                     </tr>
                   </thead>
                   <tbody>
                     {attendances.length === 0 && (
                       <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: 12 }}>Kayıt bulunamadı</td>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: 12 }}>Kayıt bulunamadı</td>
                       </tr>
                     )}
                     {attendances.map((a) => (
@@ -635,7 +632,6 @@ const TeacherDetail = () => {
                         <td style={{ padding: 8 }}>{a.notes || '—'}</td>
                         <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.lessonPrice)}</td>
                         <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.teacherCommission)}</td>
-                        <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.musicSchoolShare)}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -16,6 +16,7 @@ import Products from './pages/Products';
 import Pricing from './pages/Pricing';
 import Sales from './pages/Sales';
 import LessonPayments from './pages/LessonPayments';
+import LessonAnalytics from './pages/LessonAnalytics';
 import Schedule from './pages/Schedule';
 
 const theme = createTheme({
@@ -88,6 +89,7 @@ function App() {
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/sales" element={<Sales />} />
               <Route path="/lesson-payments" element={<LessonPayments />} />
+              <Route path="/lesson-analytics" element={<LessonAnalytics />} />
             </Routes>
           </Layout>
         </Box>
