@@ -16,13 +16,8 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Dashboard as DashboardIcon,
   School as SchoolIcon,
   Person as PersonIcon,
-  Inventory as InventoryIcon,
-  AttachMoney as MoneyIcon,
-  ShoppingCart as CartIcon,
-  Payment as PaymentIcon,
   CalendarToday as CalendarIcon,
   Category as CategoryIcon,
   Insights as InsightsIcon,
@@ -43,15 +38,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Ders programı', icon: <CalendarIcon />, path: '/schedule' },
     { text: 'Öğretmenler', icon: <SchoolIcon />, path: '/teachers' },
     { text: 'Öğrenciler', icon: <PersonIcon />, path: '/students' },
     { text: 'Ders Türleri', icon: <CategoryIcon />, path: '/lesson-types' },
-    { text: 'Ders Programı', icon: <CalendarIcon />, path: '/schedule' },
-    { text: 'Ürünler', icon: <InventoryIcon />, path: '/products' },
-    { text: 'Ücretlendirme', icon: <MoneyIcon />, path: '/pricing' },
-    { text: 'Satışlar', icon: <CartIcon />, path: '/sales' },
-    { text: 'Ders Ödemeleri', icon: <PaymentIcon />, path: '/lesson-payments' },
     { text: 'Ders Analitiği', icon: <InsightsIcon />, path: '/lesson-analytics' },
   ];
 

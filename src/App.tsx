@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box } from '@mui/material';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
+import { Navigate } from 'react-router-dom';
 import Teachers from './pages/Teachers';
 import Students from './pages/Students';
 import TeacherForm from './pages/TeacherForm';
@@ -12,10 +12,6 @@ import StudentForm from './pages/StudentForm';
 import StudentDetail from './pages/StudentDetail';
 import LessonTypes from './pages/LessonTypes';
 import LessonTypeForm from './pages/LessonTypeForm';
-import Products from './pages/Products';
-import Pricing from './pages/Pricing';
-import Sales from './pages/Sales';
-import LessonPayments from './pages/LessonPayments';
 import LessonAnalytics from './pages/LessonAnalytics';
 import Schedule from './pages/Schedule';
 
@@ -73,7 +69,7 @@ function App() {
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
           <Layout>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Navigate to="/schedule" replace />} />
               <Route path="/teachers" element={<Teachers />} />
               <Route path="/teachers/new" element={<TeacherForm />} />
               <Route path="/teachers/edit/:id" element={<TeacherForm />} />
@@ -85,10 +81,6 @@ function App() {
               <Route path="/lesson-types" element={<LessonTypes />} />
               <Route path="/lesson-types/new" element={<LessonTypeForm />} />
               <Route path="/schedule" element={<Schedule />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/sales" element={<Sales />} />
-              <Route path="/lesson-payments" element={<LessonPayments />} />
               <Route path="/lesson-analytics" element={<LessonAnalytics />} />
             </Routes>
           </Layout>

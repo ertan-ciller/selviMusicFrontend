@@ -446,11 +446,15 @@ const Schedule: React.FC = () => {
         {/* Üst başlık: Gün & Derslik sabit sütunları + saatler */}
         {(() => {
           const hours = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
-          const hourColumnWidth = 130; // px - saat kolon genişliği
-          const classroomColumnWidth = 75; // px - derslik adı kolon genişliği (küçültüldü)
+          // Responsive grid column definitions to avoid horizontal scroll
+          const leftColXs = 'minmax(88px, 110px)';
+          const leftColMd = '140px';
+          const classroomColXs = 'minmax(56px, 76px)';
+          const classroomColMd = '75px';
+          const hourCols = `repeat(${hours.length}, minmax(0, 1fr))`;
           return (
             <>
-              <Box sx={{ mb: 1, display: 'grid', gridTemplateColumns: `140px ${classroomColumnWidth}px repeat(${hours.length}, ${hourColumnWidth}px)`, gap: 0.5 }}>
+              <Box sx={{ mb: 1, display: 'grid', gridTemplateColumns: { xs: `${leftColXs} ${classroomColXs} ${hourCols}`, md: `${leftColMd} ${classroomColMd} ${hourCols}` }, gap: 0.5 }}>
                 <Box />
                 <Box />
                 {hours.map(h => (
@@ -461,7 +465,7 @@ const Schedule: React.FC = () => {
               </Box>
               {/* Gövde: Gün başlığı tek, tüm derslikleri kapsayacak şekilde sol sütunda; sağda derslik satırları */}
               {dayKeys.map((dayKey, dayIndex) => (
-                <Box key={dayKey} sx={{ display: 'grid', gridTemplateColumns: `140px ${classroomColumnWidth}px repeat(${hours.length}, ${hourColumnWidth}px)`, gap: 0.5, mb: 0.5, gridAutoRows: '23px', borderBottom: (theme) => dayIndex < dayKeys.length - 1 ? `1px solid ${theme.palette.divider}` : 'none', pb: 0.5 }}>
+                <Box key={dayKey} sx={{ display: 'grid', gridTemplateColumns: { xs: `${leftColXs} ${classroomColXs} ${hourCols}`, md: `${leftColMd} ${classroomColMd} ${hourCols}` }, gap: 0.5, mb: 0.5, gridAutoRows: '23px', borderBottom: (theme) => dayIndex < dayKeys.length - 1 ? `1px solid ${theme.palette.divider}` : 'none', pb: 0.5 }}>
                   {/* Sol: Gün etiketi tüm derslik satırlarını kapsar */}
                   <Box sx={{ gridRow: `1 / span ${classrooms.length}`, border: '1px solid #ddd', borderRadius: 1, px: 1, py: 0.5, backgroundColor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Box sx={{ textAlign: 'center' }}>

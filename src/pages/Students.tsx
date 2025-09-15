@@ -10,6 +10,8 @@ import {
   Card,
   CardContent,
   Chip,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import {
@@ -31,6 +33,8 @@ const Students = () => {
   const [filterTeacher, setFilterTeacher] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     fetchData();
@@ -109,32 +113,38 @@ const Students = () => {
     {
       field: 'id',
       headerName: 'ID',
-      width: 70,
+      minWidth: 60,
+      flex: 0.4,
     },
     {
       field: 'firstName',
       headerName: 'Ad',
-      width: 120,
+      minWidth: 110,
+      flex: 0.9,
     },
     {
       field: 'lastName',
       headerName: 'Soyad',
-      width: 120,
+      minWidth: 110,
+      flex: 0.9,
     },
     {
       field: 'email',
       headerName: 'E-posta',
-      width: 200,
+      minWidth: 170,
+      flex: 1.2,
     },
     {
       field: 'phoneNumber',
       headerName: 'Telefon',
-      width: 150,
+      minWidth: 130,
+      flex: 0.9,
     },
     {
       field: 'dateOfBirth',
       headerName: 'Doğum Tarihi',
-      width: 130,
+      minWidth: 120,
+      flex: 0.8,
       valueFormatter: (params: any) => {
         if (params.value) {
           return new Date(params.value).toLocaleDateString('tr-TR');
@@ -145,7 +155,8 @@ const Students = () => {
     {
       field: 'instrument',
       headerName: 'Enstrüman',
-      width: 130,
+      minWidth: 110,
+      flex: 0.8,
       renderCell: (params) => (
         <Chip
           label={params.value}
@@ -158,7 +169,8 @@ const Students = () => {
     {
       field: 'skillLevel',
       headerName: 'Seviye',
-      width: 120,
+      minWidth: 110,
+      flex: 0.7,
       renderCell: (params) => (
         <Chip
           label={getSkillLevelText(params.value)}
@@ -170,7 +182,8 @@ const Students = () => {
     {
       field: 'teacherId',
       headerName: 'Öğretmen',
-      width: 150,
+      minWidth: 140,
+      flex: 1,
       renderCell: (params) => (
         <Typography variant="body2">
           {getTeacherName(params.value)}
@@ -180,17 +193,20 @@ const Students = () => {
     {
       field: 'parentName',
       headerName: 'Veli Adı',
-      width: 130,
+      minWidth: 120,
+      flex: 0.8,
     },
     {
       field: 'secondParentName',
       headerName: '2. Veli Adı',
-      width: 130,
+      minWidth: 120,
+      flex: 0.8,
     },
     {
       field: 'notes',
       headerName: 'Notlar',
-      width: 200,
+      minWidth: 160,
+      flex: 1.2,
       renderCell: (params) => (
         <Typography variant="body2" noWrap>
           {params.value?.substring(0, 50)}...
@@ -200,7 +216,8 @@ const Students = () => {
     {
       field: 'status',
       headerName: 'Durum',
-      width: 110,
+      minWidth: 100,
+      flex: 0.7,
       renderCell: (params) => (
         <Chip
           label={(params.value || 'ACTIVE') === 'ACTIVE' ? 'Aktif' : 'Pasif'}
@@ -214,7 +231,8 @@ const Students = () => {
       field: 'actions',
       type: 'actions',
       headerName: 'İşlemler',
-      width: 120,
+      minWidth: 110,
+      flex: 0.7,
       getActions: (params) => [
         <GridActionsCellItem
           icon={<ViewIcon />}
@@ -234,6 +252,16 @@ const Students = () => {
       ],
     },
   ];
+
+  // Küçük ekranlarda daha az sütun göstererek yatay kaydırmayı engelle
+  const columnVisibilityModel = {
+    email: !isSmall,
+    phoneNumber: !isSmall,
+    dateOfBirth: !isSmall,
+    parentName: !isSmall,
+    secondParentName: !isSmall,
+    notes: !isSmall,
+  } as const;
 
   if (loading) {
     return (
@@ -356,7 +384,9 @@ const Students = () => {
                 backgroundColor: '#f5f5f5',
                 borderBottom: '2px solid #e0e0e0',
               },
+              width: '100%',
             }}
+            columnVisibilityModel={columnVisibilityModel}
           />
         </CardContent>
       </Card>
