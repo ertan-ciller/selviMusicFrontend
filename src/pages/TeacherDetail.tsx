@@ -34,7 +34,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { teacherAPI, Teacher, Student, financialTransactionAPI, FinancialTransaction, teacherNoteAPI, TeacherNote, lessonAttendanceAPI, LessonAttendance } from '../services/api';
+import { teacherAPI, Teacher, Student, financialTransactionAPI, FinancialTransaction, teacherNoteAPI, TeacherNote, lessonAttendanceAPI, LessonAttendance, lessonScheduleAPI, LessonSchedule } from '../services/api';
 
 interface TeacherWithStudents extends Teacher {
   students: Student[];
@@ -90,6 +90,8 @@ const TeacherDetail = () => {
       fetchTransactions(teacherId);
       // Fetch notes
       fetchNotes(teacherId);
+      // Fetch schedules (for mapping lessonScheduleId -> studentName)
+      fetchSchedulesForTeacher(teacherId);
     } catch (err) {
       setError('Öğretmen bilgileri yüklenirken bir hata oluştu');
       console.error('Teacher details fetch error:', err);
@@ -117,6 +119,7 @@ const TeacherDetail = () => {
   const [attendances, setAttendances] = useState<LessonAttendance[]>([]);
   const [attendanceLoading, setAttendanceLoading] = useState<boolean>(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [scheduleMap, setScheduleMap] = useState<Record<number, LessonSchedule>>({});
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -142,6 +145,21 @@ const TeacherDetail = () => {
       console.error('Fetch teacher attendances error:', err);
     } finally {
       setAttendanceLoading(false);
+    }
+  };
+
+  const fetchSchedulesForTeacher = async (teacherId: number) => {
+    try {
+      const res = await lessonScheduleAPI.getByTeacherId(teacherId);
+      const map = (res.data || []).reduce((acc: Record<number, LessonSchedule>, s: LessonSchedule) => {
+        if (s.id !== undefined && s.id !== null) {
+          acc[s.id] = s;
+        }
+        return acc;
+      }, {});
+      setScheduleMap(map);
+    } catch (err) {
+      console.error('Fetch teacher schedules error:', err);
     }
   };
 
@@ -610,6 +628,7 @@ const TeacherDetail = () => {
                     <tr>
                       <th style={{ textAlign: 'left', padding: 8 }}>Tarih</th>
                       <th style={{ textAlign: 'left', padding: 8 }}>Ders</th>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Öğrenci</th>
                       <th style={{ textAlign: 'left', padding: 8 }}>Durum</th>
                       <th style={{ textAlign: 'left', padding: 8 }}>Not</th>
                       <th style={{ textAlign: 'right', padding: 8 }}>Ders Ücreti</th>
@@ -619,13 +638,14 @@ const TeacherDetail = () => {
                   <tbody>
                     {attendances.length === 0 && (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: 12 }}>Kayıt bulunamadı</td>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: 12 }}>Kayıt bulunamadı</td>
                       </tr>
                     )}
                     {attendances.map((a) => (
                       <tr key={a.id}>
                         <td style={{ padding: 8 }}>{formatDateYMDToTR(a.lessonDate)}</td>
                         <td style={{ padding: 8 }}>{a.lessonTypeName || a.lessonTypeId || '—'}</td>
+                        <td style={{ padding: 8 }}>{scheduleMap[a.lessonScheduleId]?.studentName || scheduleMap[a.lessonScheduleId]?.studentId || '—'}</td>
                         <td style={{ padding: 8 }}>
                           <Chip size="small" label={getAttendanceStatusLabel(a.status)} color={getAttendanceStatusColor(a.status) as any} />
                         </td>
