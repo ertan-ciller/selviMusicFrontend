@@ -30,6 +30,8 @@ const LessonAnalytics: React.FC = () => {
   const [endDate, setEndDate] = useState<string>(formatISO(endOfMonth(today)));
   const [attendances, setAttendances] = useState<LessonAttendance[]>([]);
   const [totalIncome, setTotalIncome] = useState<number>(0);
+  const [totalExpense, setTotalExpense] = useState<number>(0);
+  const [netIncome, setNetIncome] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -58,12 +60,15 @@ const LessonAnalytics: React.FC = () => {
       }
       setAttendances(loadedAttendances);
 
-      // Total income (report endpoint, then fallback to transactions)
+      // Total income/expense/net (report endpoints, then fallback)
       let income = 0;
+      let expense = 0;
       try {
         const { startDateTime, endDateTime } = toDateTimeRange(startDate, endDate);
         const incomeRes = await financialTransactionAPI.getTotalIncome(startDateTime, endDateTime);
         income = incomeRes.data || 0;
+        const expenseRes = await financialTransactionAPI.getTotalExpense(startDateTime, endDateTime);
+        expense = expenseRes.data || 0;
       } catch (e) {
         try {
           const { startDateTime, endDateTime } = toDateTimeRange(startDate, endDate);
@@ -72,12 +77,17 @@ const LessonAnalytics: React.FC = () => {
           income = txs
             .filter(t => t.transactionType === 'INCOME')
             .reduce((sum, t) => sum + (t.amount || 0), 0);
+          expense = txs
+            .filter(t => t.transactionType === 'EXPENSE')
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
           setErrorMsg((prev) => prev || 'Toplam gelir raporu bulunamadı, işlemlerden hesaplandı.');
         } catch (_) {
           setErrorMsg((prev) => prev || 'Gelir verisi yüklenemedi.');
         }
       }
       setTotalIncome(income);
+      setTotalExpense(expense);
+      setNetIncome(income - expense);
     } finally {
       setLoading(false);
     }
@@ -198,7 +208,7 @@ const LessonAnalytics: React.FC = () => {
         </Paper>
         <Paper sx={{ p: 2, textAlign: 'center' }}>
           <Typography variant="h5" color="primary">{(stats.totalLessonIncome || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</Typography>
-          <Typography variant="body2" color="text.secondary">Ders Geliri (ders bazlı)</Typography>
+          <Typography variant="body2" color="text.secondary">Ders Geliri (ödemesi alınan)</Typography>
         </Paper>
       </Box>
 
@@ -207,6 +217,12 @@ const LessonAnalytics: React.FC = () => {
         <Divider sx={{ mb: 2 }} />
         <Typography variant="subtitle1">
           Toplam Gelir: {totalIncome.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
+        </Typography>
+        <Typography variant="subtitle1">
+          Toplam Gider: {totalExpense.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
+        </Typography>
+        <Typography variant="h6" sx={{ mt: 1 }}>
+          Net Kar: {netIncome.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Not: Toplam gelir tüm kategorilerden gelir. Ders gelirleri yukarıda ders kayıtlarından hesaplanmıştır.

@@ -40,9 +40,10 @@ import {
   Add as AddIcon,
   Paid as PaidIcon,
   Refresh as RefreshIcon,
+  Send as SendIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { studentAPI, Student, studentNoteAPI, StudentNote, lessonAttendanceAPI, LessonAttendance } from '../services/api';
+import { studentAPI, Student, studentNoteAPI, StudentNote, lessonAttendanceAPI, LessonAttendance, smsAPI, SmsTargetParent } from '../services/api';
 
 const StudentDetail = () => {
   const navigate = useNavigate();
@@ -59,6 +60,16 @@ const StudentDetail = () => {
   const [creatingNote, setCreatingNote] = useState<boolean>(false);
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState<string>('');
+
+  // SMS state (per parent)
+  const [sms1Message, setSms1Message] = useState<string>('');
+  const [sms2Message, setSms2Message] = useState<string>('');
+  const [sms1Sending, setSms1Sending] = useState<boolean>(false);
+  const [sms2Sending, setSms2Sending] = useState<boolean>(false);
+  const [sms1Error, setSms1Error] = useState<string | null>(null);
+  const [sms2Error, setSms2Error] = useState<string | null>(null);
+  const [sms1Success, setSms1Success] = useState<string | null>(null);
+  const [sms2Success, setSms2Success] = useState<string | null>(null);
 
   // Attendance & Pricing state
   const [attendances, setAttendances] = useState<LessonAttendance[]>([]);
@@ -182,6 +193,31 @@ const StudentDetail = () => {
       setNotes((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {
       console.error('Delete student note error:', err);
+    }
+  };
+
+  const sendSms = async (target: SmsTargetParent) => {
+    if (!student?.id) return;
+    const isFirst = target === 'PARENT1';
+    const text = (isFirst ? sms1Message : sms2Message).trim();
+    if (!text) {
+      isFirst ? setSms1Error('Lütfen bir mesaj yazın') : setSms2Error('Lütfen bir mesaj yazın');
+      return;
+    }
+    const hasTargetPhone = isFirst ? !!student.parentPhone : !!student.secondParentPhone;
+    if (!hasTargetPhone) {
+      isFirst ? setSms1Error('Seçilen veli için telefon bulunamadı') : setSms2Error('Seçilen veli için telefon bulunamadı');
+      return;
+    }
+    try {
+      if (isFirst) { setSms1Error(null); setSms1Success(null); setSms1Sending(true); }
+      else { setSms2Error(null); setSms2Success(null); setSms2Sending(true); }
+      await smsAPI.sendToStudentParent(student.id, target, text);
+      isFirst ? setSms1Success('SMS gönderildi') : setSms2Success('SMS gönderildi');
+    } catch (err: any) {
+      isFirst ? setSms1Error(err?.message || 'SMS gönderilemedi') : setSms2Error(err?.message || 'SMS gönderilemedi');
+    } finally {
+      isFirst ? setSms1Sending(false) : setSms2Sending(false);
     }
   };
 
@@ -427,7 +463,7 @@ const StudentDetail = () => {
               </Box>
 
               <List>
-                <ListItem>
+                <ListItem alignItems="flex-start">
                   <ListItemAvatar>
                     <Avatar sx={{ bgcolor: 'primary.main' }}>
                       <PersonIcon />
@@ -436,7 +472,30 @@ const StudentDetail = () => {
                   <ListItemText
                     primary="Veli Adı"
                     secondary={student.parentName || 'Belirtilmemiş'}
+                    sx={{ flex: '0 0 260px', mr: 2 }}
                   />
+                  <Box sx={{ flex: 2, width: '100%', minWidth: 420, maxWidth: 'unset' }}>
+                    {sms1Error && (<Alert severity="error" sx={{ mb: 1 }}>{sms1Error}</Alert>)}
+                    {sms1Success && (<Alert severity="success" sx={{ mb: 1 }}>{sms1Success}</Alert>)}
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      value={sms1Message}
+                      onChange={(e) => setSms1Message(e.target.value)}
+                      placeholder="1. veliye gönderilecek SMS mesajını yazın"
+                    />
+                    <Stack direction="row" spacing={1} mt={1}>
+                      <Button
+                        variant="contained"
+                        startIcon={<SendIcon />}
+                        disabled={sms1Sending || !student.parentPhone || !sms1Message.trim()}
+                        onClick={() => sendSms('PARENT1')}
+                      >
+                        1. Veliye SMS
+                      </Button>
+                    </Stack>
+                  </Box>
                 </ListItem>
 
                 <ListItem>
@@ -454,16 +513,39 @@ const StudentDetail = () => {
                 {(student.secondParentName || student.secondParentPhone) && (
                   <>
                     <Divider sx={{ my: 1 }} />
-                    <ListItem>
+                    <ListItem alignItems="flex-start">
                       <ListItemAvatar>
                         <Avatar sx={{ bgcolor: 'primary.main' }}>
                           <PersonIcon />
                         </Avatar>
                       </ListItemAvatar>
-                      <ListItemText
+                    <ListItemText
                         primary="2. Veli Adı"
                         secondary={student.secondParentName || 'Belirtilmemiş'}
+                        sx={{ flex: '0 0 260px', mr: 2 }}
                       />
+                      <Box sx={{ flex: 2, width: '100%', minWidth: 420, maxWidth: 'unset' }}>
+                        {sms2Error && (<Alert severity="error" sx={{ mb: 1 }}>{sms2Error}</Alert>)}
+                        {sms2Success && (<Alert severity="success" sx={{ mb: 1 }}>{sms2Success}</Alert>)}
+                        <TextField
+                          fullWidth
+                          multiline
+                          minRows={3}
+                          value={sms2Message}
+                          onChange={(e) => setSms2Message(e.target.value)}
+                          placeholder="2. veliye gönderilecek SMS mesajını yazın"
+                        />
+                        <Stack direction="row" spacing={1} mt={1}>
+                          <Button
+                            variant="contained"
+                            startIcon={<SendIcon />}
+                            disabled={sms2Sending || !student.secondParentPhone || !sms2Message.trim()}
+                            onClick={() => sendSms('PARENT2')}
+                          >
+                            2. Veliye SMS
+                          </Button>
+                        </Stack>
+                      </Box>
                     </ListItem>
                     <ListItem>
                       <ListItemAvatar>

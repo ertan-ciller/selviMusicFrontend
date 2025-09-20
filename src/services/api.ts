@@ -81,6 +81,8 @@ export interface StudentNote {
   updatedAt?: string;
 }
 
+export type SmsTargetParent = 'PARENT1' | 'PARENT2';
+
 export interface TeacherWithStudents extends Teacher {
   students: Student[];
 }
@@ -191,6 +193,8 @@ export interface LessonAttendance {
   musicSchoolShare?: number;
   isPaid?: boolean;
   paymentDate?: string; // ISO datetime
+  teacherPaid?: boolean;
+  teacherPaymentDate?: string;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -328,6 +332,12 @@ export const studentAPI = {
   delete: (id: number) => api.delete(`/students/${id}`),
 };
 
+// SMS API
+export const smsAPI = {
+  sendToStudentParent: (studentId: number, target: SmsTargetParent, message: string) =>
+    api.post(`/sms/student/${studentId}`, { target, message }),
+};
+
 // Product API
 export const productAPI = {
   getAll: () => api.get<Product[]>('/products'),
@@ -436,6 +446,7 @@ export const lessonAttendanceAPI = {
     api.put<LessonAttendance>(`/lesson_attendances/${id}`, request),
   delete: (id: number) => api.delete(`/lesson_attendances/${id}`),
   markAsPaid: (id: number) => api.post<LessonAttendance>(`/lesson_attendances/${id}/pay`),
+  markTeacherPaid: (id: number) => api.post<LessonAttendance>(`/lesson_attendances/${id}/pay-teacher`),
 };
 
 // Financial Transaction API

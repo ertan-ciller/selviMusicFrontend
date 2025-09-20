@@ -34,7 +34,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { teacherAPI, Teacher, Student, financialTransactionAPI, FinancialTransaction, teacherNoteAPI, TeacherNote, lessonAttendanceAPI, LessonAttendance, lessonScheduleAPI, LessonSchedule } from '../services/api';
+import { teacherAPI, Teacher, Student, teacherNoteAPI, TeacherNote, lessonAttendanceAPI, LessonAttendance, lessonScheduleAPI, LessonSchedule } from '../services/api';
 
 interface TeacherWithStudents extends Teacher {
   students: Student[];
@@ -68,11 +68,6 @@ const TeacherDetail = () => {
     return d.toLocaleTimeString('tr-TR', { hour12: false, hour: '2-digit', minute: '2-digit' });
   };
 
-  // Transactions
-  const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
-  const [transactionsLoading, setTransactionsLoading] = useState<boolean>(false);
-  const [transactionsError, setTransactionsError] = useState<string | null>(null);
-
   // Advance form removed
 
   useEffect(() => {
@@ -86,8 +81,6 @@ const TeacherDetail = () => {
       setLoading(true);
       const response = await teacherAPI.getWithStudents(teacherId);
       setTeacher(response.data);
-      // Fetch transactions
-      fetchTransactions(teacherId);
       // Fetch notes
       fetchNotes(teacherId);
       // Fetch schedules (for mapping lessonScheduleId -> studentName)
@@ -100,20 +93,7 @@ const TeacherDetail = () => {
     }
   };
 
-  const fetchTransactions = async (teacherId: number) => {
-    try {
-      setTransactionsError(null);
-      setTransactionsLoading(true);
-      const res = await financialTransactionAPI.getByTeacherId(teacherId);
-      const list = (res.data || []).slice().sort((a, b) => (b.transactionDate || '').localeCompare(a.transactionDate || ''));
-      setTransactions(list);
-    } catch (err) {
-      setTransactionsError('İşlemler yüklenemedi');
-      console.error('Fetch transactions error:', err);
-    } finally {
-      setTransactionsLoading(false);
-    }
-  };
+  // Transactions section removed
 
   // Attendance & Summary (Teacher-centric)
   const [attendances, setAttendances] = useState<LessonAttendance[]>([]);
@@ -486,6 +466,126 @@ const TeacherDetail = () => {
         </Box>
       </Box>
 
+      {/* Ders Katılımı ve Ücretlendirme (Öğretmen) */}
+      <Box mt={3}>
+        <Card>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6">Ders Katılımı ve Ücretlendirme</Typography>
+            </Box>
+
+            <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
+              <Chip label={`Tamamlanan: ${completedAttendances.length}`} color="success" variant="outlined" />
+              <Chip label={`İptal: ${cancelledAttendances.length}`} variant="outlined" />
+              <Chip label={`Devamsız: ${absentAttendances.length}`} color="error" variant="outlined" />
+              <Chip label={`Toplam Tutar: ${formatCurrencyTRY(totalCompletedAmount)}`} color="primary" />
+              <Chip label={`Öğretmen Ücreti: ${formatCurrencyTRY(totalTeacherCommission)}`} color="success" />
+            </Box>
+
+            <Box display="flex" gap={2} alignItems={{ xs: 'stretch', md: 'center' }} mb={2}>
+              <TextField
+                label="Başlangıç"
+                type="date"
+                size="small"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Bitiş"
+                type="date"
+                size="small"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => teacher?.id && fetchAttendances(teacher.id, startDate, endDate)}
+              >
+                Yenile
+              </Button>
+            </Box>
+
+            {attendanceError && (
+              <Alert severity="error" sx={{ mb: 2 }}>{attendanceError}</Alert>
+            )}
+
+            {attendanceLoading ? (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="120px">
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <Box sx={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Tarih</th>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Ders</th>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Öğrenci</th>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Durum</th>
+                      <th style={{ textAlign: 'left', padding: 8 }}>Not</th>
+                      <th style={{ textAlign: 'right', padding: 8 }}>Ders Ücreti</th>
+                      <th style={{ textAlign: 'right', padding: 8 }}>Öğretmen Ücreti</th>
+                      <th style={{ textAlign: 'center', padding: 8 }}>Öğretmene Ödeme</th>
+                      <th style={{ textAlign: 'right', padding: 8 }}>İşlemler</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendances.length === 0 && (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: 12 }}>Kayıt bulunamadı</td>
+                      </tr>
+                    )}
+                    {attendances.map((a) => {
+                      const canPayTeacher = a.status === 'COMPLETED' && a.isPaid && !a.teacherPaid;
+                      return (
+                      <tr key={a.id}>
+                        <td style={{ padding: 8 }}>{formatDateYMDToTR(a.lessonDate)}</td>
+                        <td style={{ padding: 8 }}>{a.lessonTypeName || a.lessonTypeId || '—'}</td>
+                        <td style={{ padding: 8 }}>{scheduleMap[a.lessonScheduleId]?.studentName || scheduleMap[a.lessonScheduleId]?.studentId || '—'}</td>
+                        <td style={{ padding: 8 }}>
+                          <Chip size="small" label={getAttendanceStatusLabel(a.status)} color={getAttendanceStatusColor(a.status) as any} />
+                        </td>
+                        <td style={{ padding: 8 }}>{a.notes || '—'}</td>
+                        <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.lessonPrice)}</td>
+                        <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.teacherCommission)}</td>
+                        <td style={{ padding: 8, textAlign: 'center' }}>
+                          {a.status === 'COMPLETED' ? (
+                            a.teacherPaid ? (
+                              <Chip size="small" color="success" label={`Ödendi (${formatDateTime24(a.teacherPaymentDate)})`} />
+                            ) : a.isPaid ? (
+                              <Chip size="small" color="warning" label="Ödenmedi" />
+                            ) : (
+                              <Chip size="small" label="Öğrenci Ödemesi Bekleniyor" />
+                            )
+                          ) : (
+                            <Chip size="small" label="—" />
+                          )}
+                        </td>
+                        <td style={{ padding: 8, textAlign: 'right' }}>
+                          {canPayTeacher && (
+                            <Button size="small" onClick={async () => {
+                              try {
+                                const res = await lessonAttendanceAPI.markTeacherPaid(a.id!);
+                                const updated = res.data;
+                                setAttendances((prev) => prev.map((x) => (x.id === a.id ? { ...x, ...updated } : x)));
+                              } catch (err: any) {
+                                alert(err?.message || 'Öğretmen ödemesi işaretlenemedi');
+                              }
+                            }}>Ödeme Yapıldı</Button>
+                          )}
+                        </td>
+                      </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </Box>
       {/* Öğretmen Notları (Liste / Ekle / Düzenle / Sil) */}
       <Box mt={3}>
         <Card>
@@ -572,132 +672,9 @@ const TeacherDetail = () => {
         </Card>
       </Box>
 
-      {/* Ders Katılımı ve Ücretlendirme (Öğretmen) */}
-      <Box mt={3}>
-        <Card>
-          <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">Ders Katılımı ve Ücretlendirme</Typography>
-            </Box>
+      
 
-            <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
-              <Chip label={`Tamamlanan: ${completedAttendances.length}`} color="success" variant="outlined" />
-              <Chip label={`İptal: ${cancelledAttendances.length}`} variant="outlined" />
-              <Chip label={`Devamsız: ${absentAttendances.length}`} color="error" variant="outlined" />
-              <Chip label={`Toplam Tutar: ${formatCurrencyTRY(totalCompletedAmount)}`} color="primary" />
-              <Chip label={`Öğretmen Ücreti: ${formatCurrencyTRY(totalTeacherCommission)}`} color="success" />
-            </Box>
-
-            <Box display="flex" gap={2} alignItems={{ xs: 'stretch', md: 'center' }} mb={2}>
-              <TextField
-                label="Başlangıç"
-                type="date"
-                size="small"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                label="Bitiş"
-                type="date"
-                size="small"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-              />
-              <Button
-                variant="outlined"
-                onClick={() => teacher?.id && fetchAttendances(teacher.id, startDate, endDate)}
-              >
-                Yenile
-              </Button>
-            </Box>
-
-            {attendanceError && (
-              <Alert severity="error" sx={{ mb: 2 }}>{attendanceError}</Alert>
-            )}
-
-            {attendanceLoading ? (
-              <Box display="flex" justifyContent="center" alignItems="center" minHeight="120px">
-                <CircularProgress size={24} />
-              </Box>
-            ) : (
-              <Box sx={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: 8 }}>Tarih</th>
-                      <th style={{ textAlign: 'left', padding: 8 }}>Ders</th>
-                      <th style={{ textAlign: 'left', padding: 8 }}>Öğrenci</th>
-                      <th style={{ textAlign: 'left', padding: 8 }}>Durum</th>
-                      <th style={{ textAlign: 'left', padding: 8 }}>Not</th>
-                      <th style={{ textAlign: 'right', padding: 8 }}>Ders Ücreti</th>
-                      <th style={{ textAlign: 'right', padding: 8 }}>Öğretmen Ücreti</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendances.length === 0 && (
-                      <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: 12 }}>Kayıt bulunamadı</td>
-                      </tr>
-                    )}
-                    {attendances.map((a) => (
-                      <tr key={a.id}>
-                        <td style={{ padding: 8 }}>{formatDateYMDToTR(a.lessonDate)}</td>
-                        <td style={{ padding: 8 }}>{a.lessonTypeName || a.lessonTypeId || '—'}</td>
-                        <td style={{ padding: 8 }}>{scheduleMap[a.lessonScheduleId]?.studentName || scheduleMap[a.lessonScheduleId]?.studentId || '—'}</td>
-                        <td style={{ padding: 8 }}>
-                          <Chip size="small" label={getAttendanceStatusLabel(a.status)} color={getAttendanceStatusColor(a.status) as any} />
-                        </td>
-                        <td style={{ padding: 8 }}>{a.notes || '—'}</td>
-                        <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.lessonPrice)}</td>
-                        <td style={{ padding: 8, textAlign: 'right' }}>{formatCurrencyTRY(a.teacherCommission)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
-      </Box>
-
-      {/* İşlemler Listesi - sadece kayıt varsa göster */}
-      {transactions.length > 0 && (
-        <Box mt={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Öğretmenle İlgili İşlemler
-              </Typography>
-              <List>
-                {transactions.map((t) => (
-                  <ListItem key={t.id} sx={{ borderBottom: '1px solid #eee' }}>
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: t.transactionType === 'INCOME' ? 'success.main' : 'error.main' }}>
-                        <AttachMoneyIcon />
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={`${t.description || 'İşlem'} — ₺${t.amount?.toFixed?.(2) ?? t.amount}`}
-                      secondary={
-                        <Box>
-                          <Typography variant="body2" color="textSecondary">
-                            {new Date(t.transactionDate).toLocaleDateString()} • {t.category} • {t.paymentMethod || '—'}
-                          </Typography>
-                          {t.notes && (
-                            <Typography variant="body2" color="textSecondary">{t.notes}</Typography>
-                          )}
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Box>
-      )}
+      {/* Öğretmenle ilgili işlemler bölümü kaldırıldı */}
     </Box>
   );
 };
