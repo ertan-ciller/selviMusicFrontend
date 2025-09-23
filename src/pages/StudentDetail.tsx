@@ -61,6 +61,11 @@ const StudentDetail = () => {
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState<string>('');
 
+  // Balance state
+  const [balanceInput, setBalanceInput] = useState<string>('');
+  const [balanceBusy, setBalanceBusy] = useState<boolean>(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+
   // SMS state (per parent)
   const [sms1Message, setSms1Message] = useState<string>('');
   const [sms2Message, setSms2Message] = useState<string>('');
@@ -95,6 +100,7 @@ const StudentDetail = () => {
       setLoading(true);
       const response = await studentAPI.getById(studentId);
       setStudent(response.data);
+      setBalanceInput('');
       fetchNotes(studentId);
     } catch (err) {
       setError('Öğrenci bilgileri yüklenirken bir hata oluştu');
@@ -129,9 +135,29 @@ const StudentDetail = () => {
       const res = await lessonAttendanceAPI.markAsPaid(attendanceId);
       const updated = res.data;
       setAttendances((prev) => prev.map((a) => (a.id === attendanceId ? { ...a, ...updated } : a)));
+      // Refresh student to update balance after payment deduction
+      if (student?.id) {
+        const s = await studentAPI.getById(student.id);
+        setStudent(s.data);
+      }
     } catch (err: any) {
       console.error('Mark as paid error:', err);
       alert(err?.message || 'Ödeme işaretlenemedi');
+    }
+  };
+
+  const adjustBalance = async (delta: number) => {
+    if (!student?.id) return;
+    try {
+      setBalanceBusy(true);
+      setBalanceError(null);
+      const res = await studentAPI.adjustBalance(student.id, delta);
+      setStudent(res.data);
+      setBalanceInput('');
+    } catch (err: any) {
+      setBalanceError(err?.message || 'Bakiye güncellenemedi');
+    } finally {
+      setBalanceBusy(false);
     }
   };
 
@@ -380,6 +406,54 @@ const StudentDetail = () => {
               <Divider sx={{ my: 2 }} />
 
               <List>
+                {/* Balance */}
+                <ListItem>
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: 'warning.light' }}>
+                      ₺
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary="Bakiye"
+                  secondary={
+                    <Typography
+                      component="span"
+                      sx={{
+                        color:
+                          (student.balance ?? 0) < 0
+                            ? 'error.main'
+                            : (student.balance ?? 0) > 0
+                            ? 'success.main'
+                            : 'text.secondary',
+                      }}
+                    >
+                      {formatCurrencyTRY(student.balance as any)}
+                    </Typography>
+                  }
+                  />
+                </ListItem>
+                <ListItem sx={{ alignItems: 'flex-start' }}>
+                  <Box sx={{ width: '100%' }}>
+                    {balanceError && (<Alert severity="error" sx={{ mb: 1 }}>{balanceError}</Alert>)}
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                      <TextField
+                        type="number"
+                        label="Tutar (+ ekle / - düş)"
+                        size="small"
+                        value={balanceInput}
+                        onChange={(e) => setBalanceInput(e.target.value)}
+                        inputProps={{ step: '0.01' }}
+                      />
+                      <Button
+                        variant="contained"
+                        disabled={balanceBusy || !balanceInput}
+                        onClick={() => adjustBalance(parseFloat(balanceInput))}
+                      >
+                        Bakiye Güncelle
+                      </Button>
+                    </Stack>
+                  </Box>
+                </ListItem>
                 <ListItem>
                   <ListItemAvatar>
                     <Avatar sx={{ bgcolor: 'primary.light' }}>

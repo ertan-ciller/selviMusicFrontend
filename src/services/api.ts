@@ -71,6 +71,7 @@ export interface Student {
   teacherId: number;
   teacherName?: string;
   status?: 'ACTIVE' | 'PASSIVE';
+  balance?: number;
 }
 
 export interface StudentNote {
@@ -330,6 +331,8 @@ export const studentAPI = {
   create: (student: Student) => api.post<Student>('/students', student),
   update: (id: number, student: Student) => api.put<Student>(`/students/${id}`, student),
   delete: (id: number) => api.delete(`/students/${id}`),
+  adjustBalance: (id: number, amount: number) => api.post<Student>(`/students/${id}/balance/adjust?amount=${amount}`),
+  
 };
 
 // SMS API
