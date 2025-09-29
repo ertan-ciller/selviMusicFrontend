@@ -38,7 +38,6 @@ import {
   Save as SaveIcon,
   Cancel as CancelIcon,
   Add as AddIcon,
-  Paid as PaidIcon,
   Refresh as RefreshIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
@@ -130,21 +129,7 @@ const StudentDetail = () => {
     }
   };
 
-  const markAttendancePaid = async (attendanceId: number) => {
-    try {
-      const res = await lessonAttendanceAPI.markAsPaid(attendanceId);
-      const updated = res.data;
-      setAttendances((prev) => prev.map((a) => (a.id === attendanceId ? { ...a, ...updated } : a)));
-      // Refresh student to update balance after payment deduction
-      if (student?.id) {
-        const s = await studentAPI.getById(student.id);
-        setStudent(s.data);
-      }
-    } catch (err: any) {
-      console.error('Mark as paid error:', err);
-      alert(err?.message || 'Ödeme işaretlenemedi');
-    }
-  };
+  // Per-lesson payment handling removed; all payments are managed via overall balance
 
   const adjustBalance = async (delta: number) => {
     if (!student?.id) return;
@@ -322,8 +307,7 @@ const StudentDetail = () => {
   const cancelledAttendances = attendances.filter((a) => a.status === 'CANCELLED');
   const absentAttendances = attendances.filter((a) => a.status === 'ABSENT');
   const totalCompletedAmount = completedAttendances.reduce((sum, a) => sum + (a.lessonPrice || 0), 0);
-  const totalPaidAmount = completedAttendances.filter((a) => a.isPaid).reduce((sum, a) => sum + (a.lessonPrice || 0), 0);
-  const totalUnpaidAmount = totalCompletedAmount - totalPaidAmount;
+  // Per-lesson paid/unpaid tracking is no longer used in UI
 
   if (loading) {
     return (
@@ -726,7 +710,12 @@ const StudentDetail = () => {
               <Button
                 variant="outlined"
                 startIcon={<RefreshIcon />}
-                onClick={() => student?.id && fetchAttendances(student.id, startDate, endDate)}
+                onClick={() => {
+                  if (student?.id) {
+                    fetchAttendances(student.id, startDate, endDate);
+                    fetchStudentDetails(student.id);
+                  }
+                }}
               >
                 Yenile
               </Button>
@@ -738,8 +727,6 @@ const StudentDetail = () => {
               <Chip label={`İptal: ${cancelledAttendances.length}`} variant="outlined" />
               <Chip label={`Devamsız: ${absentAttendances.length}`} color="error" variant="outlined" />
               <Chip label={`Tutar: ${formatCurrencyTRY(totalCompletedAmount)}`} color="primary" />
-              <Chip label={`Ödenen: ${formatCurrencyTRY(totalPaidAmount)}`} color="success" />
-              <Chip label={`Kalan: ${formatCurrencyTRY(totalUnpaidAmount)}`} color="warning" />
             </Box>
 
             {attendanceError && (
@@ -762,18 +749,15 @@ const StudentDetail = () => {
                       <TableCell align="right">Ders Ücreti</TableCell>
                       <TableCell align="right">Öğretmen Payı</TableCell>
                       <TableCell align="right">Müzik Evi Payı</TableCell>
-                      <TableCell align="center">Ödeme</TableCell>
-                      <TableCell align="right">İşlemler</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {attendances.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={9} align="center">Kayıt bulunamadı</TableCell>
+                        <TableCell colSpan={7} align="center">Kayıt bulunamadı</TableCell>
                       </TableRow>
                     )}
                     {attendances.map((a) => {
-                      const canPay = a.status === 'COMPLETED' && !a.isPaid;
                       return (
                         <TableRow key={a.id} hover>
                           <TableCell>{formatDateYMDToTR(a.lessonDate)}</TableCell>
@@ -785,24 +769,6 @@ const StudentDetail = () => {
                           <TableCell align="right">{formatCurrencyTRY(a.lessonPrice)}</TableCell>
                           <TableCell align="right">{formatCurrencyTRY(a.teacherCommission)}</TableCell>
                           <TableCell align="right">{formatCurrencyTRY(a.musicSchoolShare)}</TableCell>
-                          <TableCell align="center">
-                            {a.status === 'COMPLETED' ? (
-                              a.isPaid ? (
-                                <Chip size="small" color="success" label={`Ödendi (${formatDateTime24(a.paymentDate)})`} />
-                              ) : (
-                                <Chip size="small" color="warning" label="Ödenmedi" />
-                              )
-                            ) : (
-                              <Chip size="small" label="—" />
-                            )}
-                          </TableCell>
-                          <TableCell align="right">
-                            {canPay && (
-                              <Button size="small" startIcon={<PaidIcon />} onClick={() => markAttendancePaid(a.id!)}>
-                                Ödeme Alındı
-                              </Button>
-                            )}
-                          </TableCell>
                         </TableRow>
                       );
                     })}
