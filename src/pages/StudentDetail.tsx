@@ -42,7 +42,7 @@ import {
   Send as SendIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { studentAPI, Student, studentNoteAPI, StudentNote, lessonAttendanceAPI, LessonAttendance, smsAPI, SmsTargetParent } from '../services/api';
+import { studentAPI, Student, studentNoteAPI, StudentNote, lessonAttendanceAPI, LessonAttendance, smsAPI, SmsTargetParent, lessonScheduleAPI, LessonSchedule } from '../services/api';
 
 const StudentDetail = () => {
   const navigate = useNavigate();
@@ -88,6 +88,9 @@ const StudentDetail = () => {
   const [startDate, setStartDate] = useState<string>(defaultStart);
   const [endDate, setEndDate] = useState<string>(defaultEnd);
 
+  // Teachers derived from schedules
+  const [teachers, setTeachers] = useState<{ id: number; name: string }[]>([]);
+
   useEffect(() => {
     if (id) {
       fetchStudentDetails(parseInt(id));
@@ -101,11 +104,30 @@ const StudentDetail = () => {
       setStudent(response.data);
       setBalanceInput('');
       fetchNotes(studentId);
+      fetchTeachers(studentId);
     } catch (err) {
       setError('Öğrenci bilgileri yüklenirken bir hata oluştu');
       console.error('Student details fetch error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTeachers = async (studentId: number) => {
+    try {
+      const res = await lessonScheduleAPI.getByStudentId(studentId);
+      const schedules: LessonSchedule[] = res.data || [];
+      const map = new Map<number, string>();
+      schedules.forEach((s) => {
+        if (s.teacherId) {
+          const displayName = s.teacherName || String(s.teacherId);
+          map.set(s.teacherId, displayName);
+        }
+      });
+      const uniqueTeachers = Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+      setTeachers(uniqueTeachers);
+    } catch (e) {
+      // keep silent; fallback to single teacher info from student dto
     }
   };
 
@@ -630,52 +652,92 @@ const StudentDetail = () => {
                 </Typography>
               </Box>
 
-              {student.teacherId && student.teacherName ? (
-                <Paper
-                  sx={{
-                    p: 2,
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 1,
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: '#f5f5f5',
-                    },
-                  }}
-                  onClick={() => navigate(`/teachers/${student.teacherId}`)}
-                >
-                  <Box display="flex" alignItems="center">
-                    <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
-                      <SchoolIcon />
-                    </Avatar>
-                    <Box flex={1}>
-                      <Typography variant="h6" gutterBottom>
-                        {student.teacherName}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary" gutterBottom>
-                        Öğretmen ID: {student.teacherId}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label="Detayları Gör"
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </Box>
-                </Paper>
+              {teachers.length > 0 ? (
+                <Stack spacing={1}>
+                  {teachers.map((t) => (
+                    <Paper
+                      key={t.id}
+                      sx={{
+                        p: 2,
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: '#f5f5f5',
+                        },
+                      }}
+                      onClick={() => navigate(`/teachers/${t.id}`)}
+                    >
+                      <Box display="flex" alignItems="center">
+                        <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
+                          <SchoolIcon />
+                        </Avatar>
+                        <Box flex={1}>
+                          <Typography variant="h6" gutterBottom>
+                            {t.name}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary" gutterBottom>
+                            Öğretmen ID: {t.id}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label="Detayları Gör"
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </Box>
+                    </Paper>
+                  ))}
+                </Stack>
               ) : (
-                <Paper
-                  sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    backgroundColor: '#f9f9f9',
-                  }}
-                >
-                  <SchoolIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-                  <Typography variant="body1" color="textSecondary">
-                    Bu öğrencinin henüz öğretmeni atanmamış
-                  </Typography>
-                </Paper>
+                student.teacherId && student.teacherName ? (
+                  <Paper
+                    sx={{
+                      p: 2,
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: '#f5f5f5',
+                      },
+                    }}
+                    onClick={() => navigate(`/teachers/${student.teacherId}`)}
+                  >
+                    <Box display="flex" alignItems="center">
+                      <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
+                        <SchoolIcon />
+                      </Avatar>
+                      <Box flex={1}>
+                        <Typography variant="h6" gutterBottom>
+                          {student.teacherName}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary" gutterBottom>
+                          Öğretmen ID: {student.teacherId}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label="Detayları Gör"
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </Box>
+                  </Paper>
+                ) : (
+                  <Paper
+                    sx={{
+                      p: 3,
+                      textAlign: 'center',
+                      backgroundColor: '#f9f9f9',
+                    }}
+                  >
+                    <SchoolIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+                    <Typography variant="body1" color="textSecondary">
+                      Bu öğrencinin henüz öğretmeni atanmamış
+                    </Typography>
+                  </Paper>
+                )
               )}
             </CardContent>
           </Card>
@@ -714,6 +776,7 @@ const StudentDetail = () => {
                   if (student?.id) {
                     fetchAttendances(student.id, startDate, endDate);
                     fetchStudentDetails(student.id);
+                    fetchTeachers(student.id);
                   }
                 }}
               >

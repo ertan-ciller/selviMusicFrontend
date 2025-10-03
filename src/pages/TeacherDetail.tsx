@@ -155,7 +155,7 @@ const TeacherDetail = () => {
       case 'COMPLETED': return 'Tamamlandı';
       case 'CANCELLED': return 'İptal';
       case 'ABSENT': return 'Devamsız';
-      case 'RESCHEDULED': return 'Yeniden Planlandı';
+      case 'RESCHEDULED': return 'İnsiyatif';
       case 'SCHEDULED': return 'Planlandı';
       default: return status as string;
     }
@@ -184,6 +184,7 @@ const TeacherDetail = () => {
   const completedAttendances = attendances.filter((a) => a.status === 'COMPLETED');
   const cancelledAttendances = attendances.filter((a) => a.status === 'CANCELLED');
   const absentAttendances = attendances.filter((a) => a.status === 'ABSENT');
+  const rescheduledAttendances = attendances.filter((a) => a.status === 'RESCHEDULED');
   const totalCompletedAmount = completedAttendances.reduce((sum, a) => sum + (a.lessonPrice || 0), 0);
   const totalTeacherCommission = completedAttendances.reduce((sum, a) => sum + (a.teacherCommission || 0), 0);
 
@@ -478,6 +479,7 @@ const TeacherDetail = () => {
               <Chip label={`Tamamlanan: ${completedAttendances.length}`} color="success" variant="outlined" />
               <Chip label={`İptal: ${cancelledAttendances.length}`} variant="outlined" />
               <Chip label={`Devamsız: ${absentAttendances.length}`} color="error" variant="outlined" />
+              <Chip label={`İnsiyatif: ${rescheduledAttendances.length}`} color="warning" variant="outlined" />
               <Chip label={`Toplam Tutar: ${formatCurrencyTRY(totalCompletedAmount)}`} color="primary" />
               <Chip label={`Öğretmen Ücreti: ${formatCurrencyTRY(totalTeacherCommission)}`} color="success" />
             </Box>

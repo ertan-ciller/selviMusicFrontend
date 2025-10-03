@@ -75,10 +75,10 @@ const Schedule: React.FC = () => {
     selected: ChangeableStatus | null;
   }>({ open: false, schedule: null, date: null, current: null, selected: null });
 
-  // Filter states
+  // Filter states (selection)
   const [selectedTeacher, setSelectedTeacher] = useState<number | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
-  const [selectedLessonType, setSelectedLessonType] = useState<string | null>(null);
+  const [selectedLessonType, setSelectedLessonType] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const weekDays = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
@@ -159,7 +159,7 @@ const Schedule: React.FC = () => {
     }
 
     if (selectedLessonType) {
-      filtered = filtered.filter(schedule => schedule.lessonType === selectedLessonType);
+      filtered = filtered.filter(schedule => schedule.lessonTypeId === selectedLessonType);
     }
 
     if (selectedDay) {
@@ -172,7 +172,7 @@ const Schedule: React.FC = () => {
   const handleFilterChange = (filters: {
     teacherId: number | null;
     studentId: number | null;
-    lessonType: string | null;
+    lessonType: number | null;
     dayOfWeek: string | null;
   }) => {
     setSelectedTeacher(filters.teacherId);

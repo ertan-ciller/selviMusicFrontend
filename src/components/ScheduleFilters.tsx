@@ -3,10 +3,9 @@ import {
   Paper,
   Box,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Typography,
+  TextField,
+  Autocomplete,
 } from '@mui/material';
 import { Teacher, Student } from '../services/api';
 
@@ -15,12 +14,12 @@ interface ScheduleFiltersProps {
   students: Student[];
   selectedTeacher: number | null;
   selectedStudent: number | null;
-  selectedLessonType: string | null;
+  selectedLessonType: number | null;
   selectedDay: string | null;
   onFilterChange: (filters: {
     teacherId: number | null;
     studentId: number | null;
-    lessonType: string | null;
+    lessonType: number | null;
     dayOfWeek: string | null;
   }) => void;
   lessonTypes: { id: number; value: string; label: string }[];
@@ -45,7 +44,6 @@ const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
     { value: 'SATURDAY', label: 'Cumartesi' },
     { value: 'SUNDAY', label: 'Pazar' },
   ];
-
   const handleFilterChange = (field: string, value: any) => {
     onFilterChange({
       teacherId: field === 'teacherId' ? value : selectedTeacher,
@@ -61,68 +59,56 @@ const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
         Filtreler
       </Typography>
       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Öğretmen</InputLabel>
-          <Select
-            value={selectedTeacher || ''}
-            onChange={(e) => handleFilterChange('teacherId', e.target.value || null)}
-            label="Öğretmen"
-          >
-            <MenuItem value="">Tümü</MenuItem>
-            {teachers.map((teacher) => (
-              <MenuItem key={teacher.id} value={teacher.id}>
-                {teacher.firstName} {teacher.lastName}
-              </MenuItem>
-            ))}
-          </Select>
+        <FormControl sx={{ minWidth: 240 }}>
+          <Autocomplete
+            options={teachers}
+            getOptionLabel={(t) => (t ? `${t.firstName} ${t.lastName}` : '')}
+            isOptionEqualToValue={(opt, val) => opt.id === val.id}
+            value={teachers.find(t => t.id === selectedTeacher) || null}
+            onChange={(_, newVal) => handleFilterChange('teacherId', newVal ? newVal.id : null)}
+            renderInput={(params) => (
+              <TextField {...params} label="Öğretmen" placeholder="İsim yazarak ara" />
+            )}
+          />
+        </FormControl>
+
+        <FormControl sx={{ minWidth: 240 }}>
+          <Autocomplete
+            options={students}
+            getOptionLabel={(s) => (s ? `${s.firstName} ${s.lastName}` : '')}
+            isOptionEqualToValue={(opt, val) => opt.id === val.id}
+            value={students.find(s => s.id === selectedStudent) || null}
+            onChange={(_, newVal) => handleFilterChange('studentId', newVal ? newVal.id : null)}
+            renderInput={(params) => (
+              <TextField {...params} label="Öğrenci" placeholder="İsim yazarak ara" />
+            )}
+          />
         </FormControl>
 
         <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Öğrenci</InputLabel>
-          <Select
-            value={selectedStudent || ''}
-            onChange={(e) => handleFilterChange('studentId', e.target.value || null)}
-            label="Öğrenci"
-          >
-            <MenuItem value="">Tümü</MenuItem>
-            {students.map((student) => (
-              <MenuItem key={student.id} value={student.id}>
-                {student.firstName} {student.lastName}
-              </MenuItem>
-            ))}
-          </Select>
+          <Autocomplete
+            options={lessonTypes}
+            getOptionLabel={(lt) => (lt ? lt.label : '')}
+            isOptionEqualToValue={(opt, val) => opt.id === val.id}
+            value={lessonTypes.find(lt => lt.id === selectedLessonType) || null}
+            onChange={(_, newVal) => handleFilterChange('lessonType', newVal ? newVal.id : null)}
+            renderInput={(params) => (
+              <TextField {...params} label="Ders Türü" placeholder="Yazarak ara" />
+            )}
+          />
         </FormControl>
 
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Ders Türü</InputLabel>
-          <Select
-            value={selectedLessonType || ''}
-            onChange={(e) => handleFilterChange('lessonType', e.target.value || null)}
-            label="Ders Türü"
-          >
-            <MenuItem value="">Tümü</MenuItem>
-            {lessonTypes.map((type) => (
-              <MenuItem key={type.id} value={type.value}>
-                {type.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Gün</InputLabel>
-          <Select
-            value={selectedDay || ''}
-            onChange={(e) => handleFilterChange('dayOfWeek', e.target.value || null)}
-            label="Gün"
-          >
-            <MenuItem value="">Tümü</MenuItem>
-            {weekDays.map((day) => (
-              <MenuItem key={day.value} value={day.value}>
-                {day.label}
-              </MenuItem>
-            ))}
-          </Select>
+        <FormControl sx={{ minWidth: 200 }}>
+          <Autocomplete
+            options={weekDays}
+            getOptionLabel={(o) => o.label}
+            isOptionEqualToValue={(opt, val) => opt.value === val.value}
+            value={selectedDay ? weekDays.find(d => d.value === selectedDay) || null : null}
+            onChange={(_, newVal) => handleFilterChange('dayOfWeek', newVal ? newVal.value : null)}
+            renderInput={(params) => (
+              <TextField {...params} label="Gün" placeholder="Yazarak ara" />
+            )}
+          />
         </FormControl>
       </Box>
     </Paper>
