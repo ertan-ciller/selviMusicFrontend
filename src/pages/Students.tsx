@@ -6,12 +6,12 @@ import {
   Alert,
   CircularProgress,
   TextField,
-  MenuItem,
   Card,
   CardContent,
   Chip,
   useMediaQuery,
   useTheme,
+  Autocomplete,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import {
@@ -29,7 +29,7 @@ const Students = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterInstrument, setFilterInstrument] = useState<string>('');
-  const [filterSkillLevel, setFilterSkillLevel] = useState<string>('');
+  const [filterStudentName, setFilterStudentName] = useState<string>('');
   const [filterTeacher, setFilterTeacher] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const navigate = useNavigate();
@@ -100,14 +100,16 @@ const Students = () => {
 
   const filteredStudents = students.filter(student => {
     const instrumentMatch = filterInstrument ? student.instrument === filterInstrument : true;
-    const skillMatch = filterSkillLevel ? student.skillLevel === filterSkillLevel : true;
     const teacherMatch = filterTeacher ? student.teacherId.toString() === filterTeacher : true;
     const statusMatch = filterStatus ? (student.status || 'ACTIVE') === filterStatus : true;
-    return instrumentMatch && skillMatch && teacherMatch && statusMatch;
+    const nameQuery = filterStudentName.trim().toLowerCase();
+    const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim().toLowerCase();
+    const nameMatch = nameQuery ? fullName.includes(nameQuery) : true;
+    return instrumentMatch && teacherMatch && statusMatch && nameMatch;
   });
 
   const instruments = Array.from(new Set(students.map(s => s.instrument)));
-  const skillLevels = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'];
+  // Seviye filtrelemesi kaldırıldı
 
   const columns: GridColDef[] = [
     {
@@ -131,27 +133,16 @@ const Students = () => {
     {
       field: 'email',
       headerName: 'E-posta',
-      minWidth: 170,
-      flex: 1.2,
+      minWidth: 160,
+      flex: 1.1,
     },
     {
       field: 'phoneNumber',
       headerName: 'Telefon',
-      minWidth: 130,
-      flex: 0.9,
-    },
-    {
-      field: 'dateOfBirth',
-      headerName: 'Doğum Tarihi',
       minWidth: 120,
       flex: 0.8,
-      valueFormatter: (params: any) => {
-        if (params.value) {
-          return new Date(params.value).toLocaleDateString('tr-TR');
-        }
-        return '';
-      },
     },
+    // Doğum tarihi kolonu kaldırıldı (sayfaya sığması için)
     {
       field: 'instrument',
       headerName: 'Enstrüman',
@@ -182,8 +173,8 @@ const Students = () => {
     {
       field: 'teacherId',
       headerName: 'Öğretmen',
-      minWidth: 140,
-      flex: 1,
+      minWidth: 130,
+      flex: 0.9,
       renderCell: (params) => (
         <Typography variant="body2">
           {getTeacherName(params.value)}
@@ -193,20 +184,20 @@ const Students = () => {
     {
       field: 'parentName',
       headerName: 'Veli Adı',
-      minWidth: 120,
-      flex: 0.8,
+      minWidth: 110,
+      flex: 0.7,
     },
     {
       field: 'secondParentName',
       headerName: '2. Veli Adı',
-      minWidth: 120,
-      flex: 0.8,
+      minWidth: 110,
+      flex: 0.7,
     },
     {
       field: 'notes',
       headerName: 'Notlar',
-      minWidth: 160,
-      flex: 1.2,
+      minWidth: 150,
+      flex: 1,
       renderCell: (params) => (
         <Typography variant="body2" noWrap>
           {params.value?.substring(0, 50)}...
@@ -216,8 +207,8 @@ const Students = () => {
     {
       field: 'status',
       headerName: 'Durum',
-      minWidth: 100,
-      flex: 0.7,
+      minWidth: 90,
+      flex: 0.6,
       renderCell: (params) => (
         <Chip
           label={(params.value || 'ACTIVE') === 'ACTIVE' ? 'Aktif' : 'Pasif'}
@@ -231,8 +222,8 @@ const Students = () => {
       field: 'actions',
       type: 'actions',
       headerName: 'İşlemler',
-      minWidth: 110,
-      flex: 0.7,
+      minWidth: 100,
+      flex: 0.6,
       getActions: (params) => [
         <GridActionsCellItem
           icon={<ViewIcon />}
@@ -257,7 +248,6 @@ const Students = () => {
   const columnVisibilityModel = {
     email: !isSmall,
     phoneNumber: !isSmall,
-    dateOfBirth: !isSmall,
     parentName: !isSmall,
     secondParentName: !isSmall,
     notes: !isSmall,
@@ -296,66 +286,56 @@ const Students = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} flexWrap="wrap" gap={2} alignItems="center">
-            <Box flex={1} minWidth={200}>
-              <TextField
-                select
-                fullWidth
-                label="Enstrümana Göre Filtrele"
-                value={filterInstrument}
-                onChange={(e) => setFilterInstrument(e.target.value)}
-              >
-                <MenuItem value="">Tümü</MenuItem>
-                {instruments.map((instrument) => (
-                  <MenuItem key={instrument} value={instrument}>
-                    {instrument}
-                  </MenuItem>
-                ))}
-              </TextField>
+            <Box flex={1} minWidth={220}>
+              <Autocomplete
+                freeSolo
+                options={students.map(s => `${s.firstName} ${s.lastName}`.trim())}
+                inputValue={filterStudentName}
+                onInputChange={(_, newInput) => setFilterStudentName(newInput || '')}
+                renderInput={(params) => (
+                  <TextField {...params} label="Öğrenci Adı" placeholder="İsim yazarak ara" />
+                )}
+              />
+            </Box>
+            <Box flex={1} minWidth={220}>
+              <Autocomplete
+                options={[{ value: '', label: 'Tümü' }, ...instruments.map(i => ({ value: i, label: i }))]}
+                getOptionLabel={(o) => o.label}
+                isOptionEqualToValue={(opt, val) => opt.value === val.value}
+                value={({ value: filterInstrument, label: filterInstrument || 'Tümü' } as any)}
+                onChange={(_, newVal) => setFilterInstrument(newVal ? newVal.value : '')}
+                renderInput={(params) => (
+                  <TextField {...params} label="Enstrüman" placeholder="Yazarak ara" />
+                )}
+              />
+            </Box>
+            <Box flex={1} minWidth={240}>
+              <Autocomplete
+                options={[{ id: 0, firstName: 'Tümü', lastName: '' } as any, ...teachers]}
+                getOptionLabel={(t: any) => t.id === 0 ? 'Tümü' : `${t.firstName} ${t.lastName}`}
+                isOptionEqualToValue={(opt: any, val: any) => opt.id === val.id}
+                value={(filterTeacher ? teachers.find(t => t.id?.toString() === filterTeacher) : { id: 0, firstName: 'Tümü', lastName: '' }) as any}
+                onChange={(_, newVal: any) => setFilterTeacher(newVal && newVal.id !== 0 ? String(newVal.id) : '')}
+                renderInput={(params) => (
+                  <TextField {...params} label="Öğretmen" placeholder="İsim yazarak ara" />
+                )}
+              />
             </Box>
             <Box flex={1} minWidth={200}>
-              <TextField
-                select
-                fullWidth
-                label="Seviyeye Göre Filtrele"
-                value={filterSkillLevel}
-                onChange={(e) => setFilterSkillLevel(e.target.value)}
-              >
-                <MenuItem value="">Tümü</MenuItem>
-                {skillLevels.map((level) => (
-                  <MenuItem key={level} value={level}>
-                    {getSkillLevelText(level)}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Box>
-            <Box flex={1} minWidth={200}>
-              <TextField
-                select
-                fullWidth
-                label="Öğretmene Göre Filtrele"
-                value={filterTeacher}
-                onChange={(e) => setFilterTeacher(e.target.value)}
-              >
-                <MenuItem value="">Tümü</MenuItem>
-                {teachers.map((teacher) => (
-                  <MenuItem key={teacher.id} value={teacher.id ? teacher.id.toString() : ''}>
-                    {teacher.firstName} {teacher.lastName}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Box>
-            <Box flex={1} minWidth={200}>
-              <TextField
-                select
-                fullWidth
-                label="Duruma Göre Filtrele"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <MenuItem value="">Tümü</MenuItem>
-                <MenuItem value="ACTIVE">Aktif</MenuItem>
-                <MenuItem value="PASSIVE">Pasif</MenuItem>
-              </TextField>
+              <Autocomplete
+                options={[
+                  { value: '', label: 'Tümü' },
+                  { value: 'ACTIVE', label: 'Aktif' },
+                  { value: 'PASSIVE', label: 'Pasif' },
+                ]}
+                getOptionLabel={(o) => o.label}
+                isOptionEqualToValue={(opt, val) => opt.value === val.value}
+                value={({ value: filterStatus, label: filterStatus === 'ACTIVE' ? 'Aktif' : filterStatus === 'PASSIVE' ? 'Pasif' : 'Tümü' } as any)}
+                onChange={(_, newVal) => setFilterStatus(newVal ? newVal.value : '')}
+                renderInput={(params) => (
+                  <TextField {...params} label="Durum" placeholder="Yazarak ara" />
+                )}
+              />
             </Box>
             <Box>
               <Typography variant="body2" color="textSecondary">

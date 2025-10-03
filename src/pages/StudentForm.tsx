@@ -58,7 +58,13 @@ const StudentForm = () => {
     try {
       setInitialLoading(true);
       const response = await studentAPI.getById(parseInt(id!));
-      setFormData(response.data);
+      const data = response.data as Student;
+      setFormData({
+        ...data,
+        phoneNumber: formatPhone(data.phoneNumber || ''),
+        parentPhone: formatPhone(data.parentPhone || ''),
+        secondParentPhone: formatPhone(data.secondParentPhone || ''),
+      });
     } catch (err) {
       setError('Öğrenci bilgileri yüklenirken bir hata oluştu');
       console.error('Fetch student error:', err);
@@ -93,12 +99,40 @@ const StudentForm = () => {
     }
   };
 
+  // Telefon numarası formatı: 0555-123-1212
+  const formatPhone = (value: string): string => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
+  };
+
+  const unmaskPhone = (value: string): string => (value || '').replace(/\D/g, '');
+
+  const handlePhoneChange = (
+    field: 'phoneNumber' | 'parentPhone' | 'secondParentPhone',
+    raw: string
+  ) => {
+    const formatted = formatPhone(raw);
+    setFormData(prev => ({ ...prev, [field]: formatted } as Student));
+  };
+
   const handleInputChange = (field: keyof Student, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
   };
+
+  // Öğretmen filtreleme: seçilen enstrümana göre
+  const teacherCanTeachInstrument = (teacher: Teacher, instrument: string): boolean => {
+    if (!instrument) return true;
+    const ltMatch = (teacher.lessonTypes || []).some(lt => lt.name === instrument);
+    const instMatch = (teacher.instrument || '').toLowerCase() === instrument.toLowerCase();
+    return ltMatch || instMatch;
+  };
+
+  const filteredTeachers = (formData.instrument ? teachers.filter(t => teacherCanTeachInstrument(t, formData.instrument)) : teachers);
 
   const validateForm = (): boolean => {
     if (!formData.firstName.trim()) {
@@ -147,10 +181,16 @@ const StudentForm = () => {
 
     try {
       setLoading(true);
+      const payload: Student = {
+        ...formData,
+        phoneNumber: unmaskPhone(formData.phoneNumber),
+        parentPhone: unmaskPhone(formData.parentPhone),
+        secondParentPhone: unmaskPhone(formData.secondParentPhone || ''),
+      } as Student;
       if (isEditMode) {
-        await studentAPI.update(parseInt(id!), formData);
+        await studentAPI.update(parseInt(id!), payload);
       } else {
-        await studentAPI.create(formData);
+        await studentAPI.create(payload);
       }
       navigate('/students');
     } catch (err: any) {
@@ -228,9 +268,10 @@ const StudentForm = () => {
                   fullWidth
                   label="Telefon *"
                   value={formData.phoneNumber}
-                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                  onChange={(e) => handlePhoneChange('phoneNumber', e.target.value)}
                   required
-                  placeholder="0555-123-4567"
+                  placeholder="0555-123-1212"
+                  inputProps={{ inputMode: 'numeric' }}
                 />
               </Box>
               <Box display="flex" gap={2}>
@@ -248,7 +289,17 @@ const StudentForm = () => {
                   fullWidth
                   label="Enstrüman *"
                   value={formData.instrument}
-                  onChange={(e) => handleInputChange('instrument', e.target.value)}
+                  onChange={(e) => {
+                    const newInstrument = e.target.value as string;
+                    // Enstrüman değişince mevcut öğretmen bu enstrümanı vermiyorsa temizle
+                    const currentTeacher = teachers.find(t => t.id === formData.teacherId);
+                    const stillValid = currentTeacher ? teacherCanTeachInstrument(currentTeacher, newInstrument) : false;
+                    if (!stillValid) {
+                      setFormData(prev => ({ ...prev, instrument: newInstrument, teacherId: 0 }));
+                    } else {
+                      handleInputChange('instrument', newInstrument);
+                    }
+                  }}
                   required
                 >
                   {lessonTypes.map((lessonType) => (
@@ -290,18 +341,10 @@ const StudentForm = () => {
                     const selectedId = parseInt(e.target.value as string);
                     const selectedTeacher = teachers.find(t => t.id === selectedId);
                     handleInputChange('teacherId', selectedId);
-                    if (selectedTeacher) {
-                      const autoInstrument = (selectedTeacher.lessonTypes && selectedTeacher.lessonTypes.length > 0)
-                        ? selectedTeacher.lessonTypes[0].name
-                        : (selectedTeacher.instrument || '');
-                      if (autoInstrument) {
-                        handleInputChange('instrument', autoInstrument);
-                      }
-                    }
                   }}
                   required
                 >
-                  {teachers.map((teacher) => (
+                  {filteredTeachers.map((teacher) => (
                     <MenuItem key={teacher.id} value={teacher.id}>
                       {teacher.firstName} {teacher.lastName}
                       {` - ${(teacher.lessonTypes && teacher.lessonTypes.length > 0)
@@ -330,9 +373,10 @@ const StudentForm = () => {
                   fullWidth
                   label="Veli Telefonu *"
                   value={formData.parentPhone}
-                  onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                  onChange={(e) => handlePhoneChange('parentPhone', e.target.value)}
                   required
-                  placeholder="0555-123-4567"
+                  placeholder="0555-123-1212"
+                  inputProps={{ inputMode: 'numeric' }}
                 />
               </Box>
 
@@ -353,8 +397,9 @@ const StudentForm = () => {
                   fullWidth
                   label="2. Veli Telefonu"
                   value={formData.secondParentPhone || ''}
-                  onChange={(e) => handleInputChange('secondParentPhone' as any, e.target.value)}
-                  placeholder="0555-123-4567"
+                  onChange={(e) => handlePhoneChange('secondParentPhone', e.target.value)}
+                  placeholder="0555-123-1212"
+                  inputProps={{ inputMode: 'numeric' }}
                 />
               </Box>
 
