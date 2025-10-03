@@ -58,7 +58,7 @@ export interface Student {
   id?: number;
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string | null;
   phoneNumber: string;
   dateOfBirth: string;
   instrument: string;

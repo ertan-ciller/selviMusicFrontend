@@ -61,6 +61,7 @@ const StudentForm = () => {
       const data = response.data as Student;
       setFormData({
         ...data,
+        email: (data as any).email || '',
         phoneNumber: formatPhone(data.phoneNumber || ''),
         parentPhone: formatPhone(data.parentPhone || ''),
         secondParentPhone: formatPhone(data.secondParentPhone || ''),
@@ -183,6 +184,7 @@ const StudentForm = () => {
       setLoading(true);
       const payload: Student = {
         ...formData,
+        email: (formData.email && formData.email.trim()) ? formData.email.trim() : undefined,
         phoneNumber: unmaskPhone(formData.phoneNumber),
         parentPhone: unmaskPhone(formData.parentPhone),
         secondParentPhone: unmaskPhone(formData.secondParentPhone || ''),
@@ -261,7 +263,7 @@ const StudentForm = () => {
                   fullWidth
                   label="E-posta"
                   type="email"
-                  value={formData.email}
+                  value={formData.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                 />
                 <TextField
