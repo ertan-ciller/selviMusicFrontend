@@ -470,8 +470,8 @@ const Schedule: React.FC = () => {
         {(() => {
           const hours = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
           // Responsive grid column definitions to avoid horizontal scroll
-          const leftColXs = 'minmax(88px, 110px)';
-          const leftColMd = '140px';
+          const leftColXs = 'minmax(72px, 92px)';
+          const leftColMd = '70px';
           const classroomColXs = 'minmax(56px, 76px)';
           const classroomColMd = '75px';
           const hourCols = `repeat(${hours.length}, minmax(0, 1fr))`;
@@ -509,60 +509,60 @@ const Schedule: React.FC = () => {
                         return (
                           <Box key={`${c.id}-${h}`}>
                             {scheduleForThisTime ? (
-                              <Card sx={{
-                                backgroundColor: getTeacherColor(scheduleForThisTime.teacherId),
-                                color: 'white',
-                                border: currentStatus ? `2px solid ${statusColor}` : '1px solid transparent',
-                                opacity: 1,
-                                position: 'relative',
-                              }}>
-                                <CardContent sx={{ p: 0.3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', '&:last-child': { pb: 0.3 } }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flex: 1 }}>
-                                    {currentStatus && (
-                                      <Tooltip title={getAttendanceStatusText(currentStatus)}>
-                                        {renderStatusBadge(currentStatus as ChangeableStatus)}
-                                      </Tooltip>
-                                    )}
-                                    <Tooltip title={getStudentName(scheduleForThisTime.studentId)}>
+                              <Tooltip title={getStudentName(scheduleForThisTime.studentId)} arrow>
+                                <Card sx={{
+                                  backgroundColor: getTeacherColor(scheduleForThisTime.teacherId),
+                                  color: 'white',
+                                  border: currentStatus ? `2px solid ${statusColor}` : '1px solid transparent',
+                                  opacity: 1,
+                                  position: 'relative',
+                                }}>
+                                  <CardContent sx={{ p: 0.3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', '&:last-child': { pb: 0.3 } }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flex: 1 }}>
+                                      {currentStatus && (
+                                        <Tooltip title={getAttendanceStatusText(currentStatus)}>
+                                          {renderStatusBadge(currentStatus as ChangeableStatus)}
+                                        </Tooltip>
+                                      )}
                                       <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', md: '0.64rem' }, fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', letterSpacing: 0.2 }}>
                                         {getResponsiveStudentLabel(scheduleForThisTime.studentId)}
                                       </Typography>
-                                    </Tooltip>
-                                  </Box>
-                                  <Box sx={{ display: 'flex', gap: 0.2 }}>
-                                    {currentStatus ? (
-                                      <Tooltip title="Durumu değiştir">
-                                        <IconButton size="small" onClick={() => openStatusChangeDialog(scheduleForThisTime, weekDates[dayIndex], currentStatus)} sx={{ color: 'white', p: 0.15 }}>
-                                          <EditIcon sx={{ fontSize: '0.9rem' }} />
-                                        </IconButton>
-                                      </Tooltip>
-                                    ) : (
-                                      <>
-                                        <Tooltip title="Dersi Tamamla">
-                                          <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'COMPLETED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
-                                            <CheckCircleIcon sx={{ fontSize: '0.9rem' }} />
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 0.2 }}>
+                                      {currentStatus ? (
+                                        <Tooltip title="Durumu değiştir">
+                                          <IconButton size="small" onClick={() => openStatusChangeDialog(scheduleForThisTime, weekDates[dayIndex], currentStatus)} sx={{ color: 'white', p: 0.15 }}>
+                                            <EditIcon sx={{ fontSize: '0.9rem' }} />
                                           </IconButton>
                                         </Tooltip>
-                                        <Tooltip title="Dersi İptal Et">
-                                          <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'CANCELLED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
-                                            <CancelIcon sx={{ fontSize: '0.9rem' }} />
-                                          </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="İnsiyatif">
-                                          <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'RESCHEDULED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
-                                            <GavelIcon sx={{ fontSize: '0.9rem' }} />
-                                          </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Dersi Yak">
-                                          <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'ABSENT', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
-                                            <PersonOffIcon sx={{ fontSize: '0.9rem' }} />
-                                          </IconButton>
-                                        </Tooltip>
-                                      </>
-                                    )}
-                                  </Box>
-                                </CardContent>
-                              </Card>
+                                      ) : (
+                                        <>
+                                          <Tooltip title="Dersi Tamamla">
+                                            <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'COMPLETED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
+                                              <CheckCircleIcon sx={{ fontSize: '0.9rem' }} />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="Dersi İptal Et">
+                                            <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'CANCELLED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
+                                              <CancelIcon sx={{ fontSize: '0.9rem' }} />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="İnsiyatif">
+                                            <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'RESCHEDULED', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
+                                              <GavelIcon sx={{ fontSize: '0.9rem' }} />
+                                            </IconButton>
+                                          </Tooltip>
+                                          <Tooltip title="Dersi Yak">
+                                            <IconButton size="small" onClick={() => handleMarkAttendance(scheduleForThisTime, 'ABSENT', weekDates[dayIndex])} sx={{ color: 'white', p: 0.15 }}>
+                                              <PersonOffIcon sx={{ fontSize: '0.9rem' }} />
+                                            </IconButton>
+                                          </Tooltip>
+                                        </>
+                                      )}
+                                    </Box>
+                                  </CardContent>
+                                </Card>
+                              </Tooltip>
                             ) : (
                               <Box sx={{ border: '1px dashed #eee', borderRadius: 1, height: '100%' }} />
                             )}
