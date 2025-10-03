@@ -25,6 +25,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const drawerWidth = 240;
+const collapsedWidth = 64;
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -32,6 +33,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
@@ -45,8 +47,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Ders Analitiği', icon: <InsightsIcon />, path: '/lesson-analytics' },
   ];
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  const handleMenuButtonClick = () => {
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setDesktopOpen((prev) => !prev);
+    }
   };
 
   const handleNavigation = (path: string) => {
@@ -59,7 +65,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const drawer = (
     <Box>
       <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{ fontWeight: 'bold', display: { md: desktopOpen ? 'block' : 'none' } }}
+        >
           Selvi Müzik
         </Typography>
       </Toolbar>
@@ -77,16 +88,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     backgroundColor: 'primary.main',
                   },
                 },
+                justifyContent: { md: desktopOpen ? 'initial' : 'center' },
               }}
             >
               <ListItemIcon
                 sx={{
                   color: location.pathname === item.path ? 'primary.contrastText' : 'inherit',
+                  minWidth: { md: desktopOpen ? 40 : 0 },
+                  mr: { md: desktopOpen ? 2 : 'auto' },
+                  justifyContent: 'center',
                 }}
               >
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemText
+                primary={item.text}
+                sx={{ display: { md: desktopOpen ? 'block' : 'none' } }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
@@ -99,8 +117,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <AppBar
         position="fixed"
         sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
+          width: { md: `calc(100% - ${desktopOpen ? drawerWidth : collapsedWidth}px)` },
+          ml: { md: `${desktopOpen ? drawerWidth : collapsedWidth}px` },
         }}
       >
         <Toolbar>
@@ -108,8 +126,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             color="inherit"
             aria-label="open drawer"
             edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            onClick={handleMenuButtonClick}
+            sx={{ mr: 2 }}
           >
             <MenuIcon />
           </IconButton>
@@ -120,12 +138,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        sx={{ width: { md: desktopOpen ? drawerWidth : collapsedWidth }, flexShrink: { md: 0 } }}
       >
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
+          onClose={() => setMobileOpen(false)}
           ModalProps={{
             keepMounted: true,
           }}
@@ -140,7 +158,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           variant="permanent"
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: desktopOpen ? drawerWidth : collapsedWidth,
+              overflowX: 'hidden',
+              transition: 'width 200ms ease',
+            },
           }}
           open
         >
@@ -152,7 +175,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
+          width: { md: `calc(100% - ${desktopOpen ? drawerWidth : collapsedWidth}px)` },
           mt: '64px',
         }}
       >

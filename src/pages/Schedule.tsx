@@ -25,6 +25,7 @@ import {
   Snackbar,
   Tooltip,
   Fab,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,10 +45,14 @@ import { lessonScheduleAPI, teacherAPI, studentAPI, lessonAttendanceAPI, LessonS
 import LessonForm from '../components/LessonForm';
 import ScheduleFilters from '../components/ScheduleFilters';
 import ScheduleStats from '../components/ScheduleStats';
+import { useTheme } from '@mui/material/styles';
 
 type ChangeableStatus = 'COMPLETED' | 'CANCELLED' | 'ABSENT' | 'RESCHEDULED';
 
 const Schedule: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+  const isSmOnly = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
 
   const [currentWeek, setCurrentWeek] = useState(new Date());
@@ -208,6 +213,24 @@ const Schedule: React.FC = () => {
   const getStudentName = (studentId: number) => {
     const student = students.find(s => s.id === studentId);
     return student ? `${student.firstName} ${student.lastName}` : 'Bilinmeyen Öğrenci';
+  };
+
+  // Cihaz boyutuna göre öğrenci adını kısaltarak göster
+  const getResponsiveStudentLabel = (studentId: number) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return 'Bilinmeyen';
+    const first = (student.firstName || '').trim();
+    const last = (student.lastName || '').trim();
+
+    if (isXs) {
+      const fi = first ? first.charAt(0) : '';
+      const li = last ? last.charAt(0) : '';
+      return `${fi}${li}`.toUpperCase(); // Örn: AB
+    }
+    if (isSmOnly) {
+      return `${first} ${last ? last.charAt(0) + '.' : ''}`; // Örn: Ali Y.
+    }
+    return `${first} ${last}`;
   };
 
   const getLessonTypeColor = (lessonType: string) => {
@@ -465,7 +488,7 @@ const Schedule: React.FC = () => {
               </Box>
               {/* Gövde: Gün başlığı tek, tüm derslikleri kapsayacak şekilde sol sütunda; sağda derslik satırları */}
               {dayKeys.map((dayKey, dayIndex) => (
-                <Box key={dayKey} sx={{ display: 'grid', gridTemplateColumns: { xs: `${leftColXs} ${classroomColXs} ${hourCols}`, md: `${leftColMd} ${classroomColMd} ${hourCols}` }, gap: 0.5, mb: 0.5, gridAutoRows: '23px', borderBottom: (theme) => dayIndex < dayKeys.length - 1 ? `1px solid ${theme.palette.divider}` : 'none', pb: 0.5 }}>
+                <Box key={dayKey} sx={{ display: 'grid', gridTemplateColumns: { xs: `${leftColXs} ${classroomColXs} ${hourCols}`, md: `${leftColMd} ${classroomColMd} ${hourCols}` }, gap: 0.5, mb: 0.5, gridAutoRows: { xs: '26px', md: '23px' }, borderBottom: (theme) => dayIndex < dayKeys.length - 1 ? `1px solid ${theme.palette.divider}` : 'none', pb: 0.5 }}>
                   {/* Sol: Gün etiketi tüm derslik satırlarını kapsar */}
                   <Box sx={{ gridRow: `1 / span ${classrooms.length}`, border: '1px solid #ddd', borderRadius: 1, px: 1, py: 0.5, backgroundColor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Box sx={{ textAlign: 'center' }}>
@@ -501,8 +524,8 @@ const Schedule: React.FC = () => {
                                       </Tooltip>
                                     )}
                                     <Tooltip title={getStudentName(scheduleForThisTime.studentId)}>
-                                      <Typography variant="caption" sx={{ fontSize: '0.64rem', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                        {getStudentName(scheduleForThisTime.studentId)}
+                                      <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', md: '0.64rem' }, fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', letterSpacing: 0.2 }}>
+                                        {getResponsiveStudentLabel(scheduleForThisTime.studentId)}
                                       </Typography>
                                     </Tooltip>
                                   </Box>
