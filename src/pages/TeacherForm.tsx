@@ -55,12 +55,21 @@ const TeacherForm = () => {
     }
   };
 
+  // Telefon numarası formatı: 0555-123-1212
+  const formatPhone = (value: string): string => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
+  };
+
   const fetchTeacher = async (teacherId: number) => {
     try {
       setInitialLoading(true);
       const response = await teacherAPI.getById(teacherId);
       setFormData({
         ...response.data,
+        phoneNumber: formatPhone(response.data.phoneNumber || ''),
         lessonTypeIds: response.data.lessonTypes?.map((lt) => lt.id!) || [],
       });
     } catch (err) {
@@ -190,10 +199,11 @@ const TeacherForm = () => {
                 fullWidth
                 label="Telefon *"
                 value={formData.phoneNumber}
-                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                onChange={(e) => handleInputChange('phoneNumber', formatPhone(e.target.value))}
                 required
-                placeholder="0555-123-4567"
+                placeholder="0555-123-1212"
                 autoComplete="tel"
+                inputProps={{ inputMode: 'numeric' }}
               />
               {/* Enstrüman alanı kaldırıldı */}
               <TextField

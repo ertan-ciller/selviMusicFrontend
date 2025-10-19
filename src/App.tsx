@@ -18,9 +18,9 @@ import Schedule from './pages/Schedule';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#db6638',
+      light: '#f08e69',
+      dark: '#a64a24',
     },
     secondary: {
       main: '#dc004e',

@@ -503,12 +503,12 @@ const Schedule: React.FC = () => {
       <Paper sx={{ p: 1 }}>
         {/* Üst başlık: Gün & Derslik sabit sütunları + saatler */}
         {(() => {
-          const hours = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
+          const hours = Array.from({ length: 12 }, (_, i) => `${(i + 10).toString().padStart(2, '0')}:00`);
           // Responsive grid column definitions to avoid horizontal scroll
           const leftColXs = 'minmax(72px, 92px)';
           const leftColMd = '70px';
-          const classroomColXs = 'minmax(56px, 76px)';
-          const classroomColMd = '75px';
+          const classroomColXs = 'minmax(50px, 76px)';
+          const classroomColMd = '58px';
           const hourCols = `repeat(${hours.length}, minmax(0, 1fr))`;
           return (
             <>

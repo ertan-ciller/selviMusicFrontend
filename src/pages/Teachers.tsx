@@ -25,7 +25,8 @@ const Teachers= () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterInstrument, setFilterInstrument] = useState<string>('');
+  const [filterName, setFilterName] = useState<string>('');
+  const [filterLessonType, setFilterLessonType] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,11 +62,24 @@ const Teachers= () => {
     navigate(`/teachers/${id}`);
   };
 
-  const filteredTeachers = teachers.filter(teacher =>
-    filterInstrument ? teacher.instrument === filterInstrument : true
-  );
+  const filteredTeachers = teachers.filter((teacher) => {
+    const fullName = `${teacher.firstName ?? ''} ${teacher.lastName ?? ''}`.trim().toLowerCase();
+    const matchesName = filterName.trim() === ''
+      ? true
+      : fullName.includes(filterName.trim().toLowerCase());
 
-  const instruments = Array.from(new Set(teachers.map(t => t.instrument)));
+    const matchesLessonType = filterLessonType === ''
+      ? true
+      : (teacher.lessonTypes || []).some((lt) => lt.name === filterLessonType);
+
+    return matchesName && matchesLessonType;
+  });
+
+  const lessonTypeNames = Array.from(
+    new Set(
+      teachers.flatMap((t) => (t.lessonTypes || []).map((lt) => lt.name))
+    )
+  );
 
   const columns: GridColDef[] = [
     {
@@ -100,7 +114,7 @@ const Teachers= () => {
       width: 220,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-          {(params.row.lessonTypes || []).map((lt: { id: number; name: string }) => (
+          {(params.row.lessonTypes || []).map((lt: any) => (
             <Chip key={lt.id} label={lt.name} size="small" variant="outlined" />
           ))}
         </Box>
@@ -182,16 +196,24 @@ const Teachers= () => {
           <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} alignItems="center">
             <Box flexGrow={1}>
               <TextField
+                fullWidth
+                label="İsme Göre Ara"
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+              />
+            </Box>
+            <Box flexGrow={1}>
+              <TextField
                 select
                 fullWidth
-                label="Enstrümana Göre Filtrele"
-                value={filterInstrument}
-                onChange={(e) => setFilterInstrument(e.target.value)}
+                label="Ders Türüne Göre Filtrele"
+                value={filterLessonType}
+                onChange={(e) => setFilterLessonType(e.target.value)}
               >
                 <MenuItem value="">Tümü</MenuItem>
-                {instruments.map((instrument) => (
-                  <MenuItem key={instrument} value={instrument}>
-                    {instrument}
+                {lessonTypeNames.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
                   </MenuItem>
                 ))}
               </TextField>

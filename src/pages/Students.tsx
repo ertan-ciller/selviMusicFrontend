@@ -31,7 +31,7 @@ const Students = () => {
   const [filterInstrument, setFilterInstrument] = useState<string>('');
   const [filterStudentName, setFilterStudentName] = useState<string>('');
   const [filterTeacher, setFilterTeacher] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('ACTIVE');
   const navigate = useNavigate();
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('md'));
