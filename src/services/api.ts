@@ -60,7 +60,7 @@ export interface Student {
   lastName: string;
   email?: string | null;
   phoneNumber: string;
-  dateOfBirth: string;
+  dateOfBirth?: string | null;
   instrument: string;
   skillLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
   parentName: string;

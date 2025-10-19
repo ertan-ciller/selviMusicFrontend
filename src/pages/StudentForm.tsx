@@ -31,7 +31,6 @@ const StudentForm = () => {
     lastName: '',
     email: '',
     phoneNumber: '',
-    dateOfBirth: '',
     instrument: '',
     skillLevel: 'BEGINNER',
     parentName: '',
@@ -149,10 +148,7 @@ const StudentForm = () => {
       setError('Telefon alanı zorunludur');
       return false;
     }
-    if (!formData.dateOfBirth) {
-      setError('Doğum tarihi zorunludur');
-      return false;
-    }
+    // Doğum tarihi opsiyonel
     if (!formData.instrument.trim()) {
       setError('Enstrüman alanı zorunludur');
       return false;
@@ -188,6 +184,7 @@ const StudentForm = () => {
         phoneNumber: unmaskPhone(formData.phoneNumber),
         parentPhone: unmaskPhone(formData.parentPhone),
         secondParentPhone: unmaskPhone(formData.secondParentPhone || ''),
+        dateOfBirth: (formData.dateOfBirth && String(formData.dateOfBirth).trim()) ? formData.dateOfBirth : undefined,
       } as Student;
       if (isEditMode) {
         await studentAPI.update(parseInt(id!), payload);
@@ -279,11 +276,21 @@ const StudentForm = () => {
               <Box display="flex" gap={2}>
                 <TextField
                   fullWidth
-                  label="Doğum Tarihi *"
+                  label="Doğum Tarihi"
                   type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  required
+                  value={formData.dateOfBirth || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData(prev => {
+                      const next: any = { ...prev };
+                      if (val) {
+                        next.dateOfBirth = val;
+                      } else {
+                        delete next.dateOfBirth;
+                      }
+                      return next;
+                    });
+                  }}
                   InputLabelProps={{ shrink: true }}
                 />
                 <TextField
