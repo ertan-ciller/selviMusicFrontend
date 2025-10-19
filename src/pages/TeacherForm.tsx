@@ -10,6 +10,7 @@ import {
   CircularProgress,
   MenuItem,
   Chip,
+  Stack,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -160,138 +161,124 @@ const TeacherForm = () => {
       <Card>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <Box display="flex" gap={3} flexWrap="wrap">
-              <Box flex={1}>
-                <TextField
-                  fullWidth
-                  label="Ad *"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  required
-                />
-              </Box>
-              <Box flex={1}>
-                <TextField
-                  fullWidth
-                  label="Soyad *"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  required
-                />
-              </Box>
-              <Box flex={1}>
-                <TextField
-                  fullWidth
-                  label="E-posta"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                />
-              </Box>
-              <Box flex={1}>
-                <TextField
-                  fullWidth
-                  label="Telefon *"
-                  value={formData.phoneNumber}
-                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                  required
-                  placeholder="0555-123-4567"
-                />
-              </Box>
+            <Stack spacing={2}>
+              <TextField
+                fullWidth
+                label="Ad *"
+                value={formData.firstName}
+                onChange={(e) => handleInputChange('firstName', e.target.value)}
+                required
+                autoComplete="given-name"
+              />
+              <TextField
+                fullWidth
+                label="Soyad *"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange('lastName', e.target.value)}
+                required
+                autoComplete="family-name"
+              />
+              <TextField
+                fullWidth
+                label="E-posta"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                autoComplete="email"
+              />
+              <TextField
+                fullWidth
+                label="Telefon *"
+                value={formData.phoneNumber}
+                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                required
+                placeholder="0555-123-4567"
+                autoComplete="tel"
+              />
               {/* Enstrüman alanı kaldırıldı */}
-              <Box flex={1}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Ders Türleri *"
-                  SelectProps={{
-                    multiple: true,
-                    renderValue: (selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {(selected as number[]).map((id) => {
-                          const lt = lessonTypes.find((l) => l.id === id);
-                          return <Chip key={id} label={lt?.name || id} size="small" />;
-                        })}
-                      </Box>
-                    ),
-                  }}
-                  value={formData.lessonTypeIds || []}
-                  onChange={(e) => {
-                    const value = e.target.value as unknown as number[] | string[];
-                    const ids = Array.isArray(value) ? value.map((v) => Number(v)) : [];
-                    handleInputChange('lessonTypeIds', ids);
-                  }}
-                  required
-                >
-                  {lessonTypes.map((lessonType) => (
-                    <MenuItem key={lessonType.id} value={lessonType.id}>
-                      {lessonType.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Box>
-              <Box flex={1}>
-                <TextField
-                  fullWidth
-                  label="Renk Kodu"
-                  value={formData.color || ''}
-                  onChange={(e) => handleInputChange('color', e.target.value)}
-                  placeholder="#2980B9"
-                  helperText="HEX renk (ör. #FF5733). Sol taraftan da seçebilirsiniz."
-                  InputProps={{
-                    startAdornment: (
-                      <input
-                        type="color"
-                        value={formData.color || '#2980B9'}
-                        onChange={(e) => handleInputChange('color', e.target.value)}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          border: 'none',
-                          background: 'transparent',
-                          padding: 0,
-                          marginRight: 8,
-                          cursor: 'pointer',
-                        }}
-                      />
-                    ),
-                  }}
-                />
-              </Box>
-              <Box flex={1}>
-                <TextField
-                  fullWidth
-                  label="Deneyim Yılı *"
-                  type="number"
-                  value={formData.experienceYears}
-                  onChange={(e) => handleInputChange('experienceYears', parseInt(e.target.value) || 0)}
-                  required
-                  inputProps={{ min: 0 }}
-                />
-              </Box>
-              <Box flex={1}>
-                <TextField
-                  fullWidth
-                  label="Biyografi"
-                  multiline
-                  rows={4}
-                  value={formData.bio}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                  placeholder="Öğretmen hakkında kısa bilgi..."
-                />
-              </Box>
-              <Box flex={1}>
-                <TextField
-                  fullWidth
-                  label="Notlar"
-                  multiline
-                  rows={4}
-                  value={formData.notes || ''}
-                  onChange={(e) => handleInputChange('notes' as keyof Teacher, e.target.value)}
-                  placeholder="Bu öğretmene özel notlar..."
-                />
-              </Box>
-              <Box display="flex" gap={2} justifyContent="flex-end">
+              <TextField
+                select
+                fullWidth
+                label="Ders Türleri *"
+                SelectProps={{
+                  multiple: true,
+                  renderValue: (selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {(selected as number[]).map((id) => {
+                        const lt = lessonTypes.find((l) => l.id === id);
+                        return <Chip key={id} label={lt?.name || id} size="small" />;
+                      })}
+                    </Box>
+                  ),
+                }}
+                value={formData.lessonTypeIds || []}
+                onChange={(e) => {
+                  const value = e.target.value as unknown as number[] | string[];
+                  const ids = Array.isArray(value) ? value.map((v) => Number(v)) : [];
+                  handleInputChange('lessonTypeIds', ids);
+                }}
+                required
+              >
+                {lessonTypes.map((lessonType) => (
+                  <MenuItem key={lessonType.id} value={lessonType.id}>
+                    {lessonType.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                fullWidth
+                label="Renk Kodu"
+                value={formData.color || ''}
+                onChange={(e) => handleInputChange('color', e.target.value)}
+                placeholder="#2980B9"
+                helperText="HEX renk (ör. #FF5733). Sol taraftan da seçebilirsiniz."
+                InputProps={{
+                  startAdornment: (
+                    <input
+                      type="color"
+                      value={formData.color || '#2980B9'}
+                      onChange={(e) => handleInputChange('color', e.target.value)}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        border: 'none',
+                        background: 'transparent',
+                        padding: 0,
+                        marginRight: 8,
+                        cursor: 'pointer',
+                      }}
+                    />
+                  ),
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Deneyim Yılı *"
+                type="number"
+                value={formData.experienceYears}
+                onChange={(e) => handleInputChange('experienceYears', parseInt(e.target.value) || 0)}
+                required
+                inputProps={{ min: 0 }}
+              />
+              <TextField
+                fullWidth
+                label="Biyografi"
+                multiline
+                rows={4}
+                value={formData.bio}
+                onChange={(e) => handleInputChange('bio', e.target.value)}
+                placeholder="Öğretmen hakkında kısa bilgi..."
+              />
+              <TextField
+                fullWidth
+                label="Notlar"
+                multiline
+                rows={4}
+                value={formData.notes || ''}
+                onChange={(e) => handleInputChange('notes' as keyof Teacher, e.target.value)}
+                placeholder="Bu öğretmene özel notlar..."
+              />
+              <Box display="flex" gap={2} justifyContent="flex-end" sx={{ mt: 1 }}>
                 <Button
                   variant="outlined"
                   onClick={() => navigate('/teachers')}
@@ -308,7 +295,7 @@ const TeacherForm = () => {
                   {loading ? (isEditMode ? 'Güncelleniyor...' : 'Kaydediliyor...') : (isEditMode ? 'Güncelle' : 'Kaydet')}
                 </Button>
               </Box>
-            </Box>
+            </Stack>
           </form>
         </CardContent>
       </Card>

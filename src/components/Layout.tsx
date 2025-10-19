@@ -23,6 +23,7 @@ import {
   Insights as InsightsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import selviLogo from '../selviSanatLogo.jpeg';
 
 const drawerWidth = 240;
 const collapsedWidth = 64;
@@ -65,13 +66,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const drawer = (
     <Box>
       <Toolbar>
+        <Box
+          component="img"
+          src={selviLogo}
+          alt="Selvi Sanat Merkezi"
+          sx={{ height: 40, width: 40, borderRadius: '50%', mr: 2 }}
+        />
         <Typography
           variant="h6"
           noWrap
           component="div"
           sx={{ fontWeight: 'bold', display: { md: desktopOpen ? 'block' : 'none' } }}
         >
-          Selvi Müzik
+          Selvi Sanat
         </Typography>
       </Toolbar>
       <List>
@@ -131,8 +138,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           >
             <MenuIcon />
           </IconButton>
+          <Box
+            component="img"
+            src={selviLogo}
+            alt="Selvi Sanat Merkezi"
+            sx={{ height: 36, width: 36, borderRadius: '50%', mr: 2 }}
+          />
           <Typography variant="h6" noWrap component="div">
-            Müzik Evi Yönetim Sistemi
+            Sanat Evi Yönetim Sistemi
           </Typography>
         </Toolbar>
       </AppBar>

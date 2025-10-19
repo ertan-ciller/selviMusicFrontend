@@ -18,6 +18,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Menu,
+  ListItemIcon,
+  ListItemText,
   RadioGroup,
   FormControlLabel,
   Radio,
@@ -30,6 +33,7 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
+  EditNote as EditScheduleIcon,
   Delete as DeleteIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -70,6 +74,13 @@ const Schedule: React.FC = () => {
     message: '',
     severity: 'success',
   });
+
+  // Right-click context menu for lesson cards
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    schedule: LessonSchedule | null;
+  } | null>(null);
 
   // Status change dialog state
   const [statusDialog, setStatusDialog] = useState<{
@@ -294,6 +305,30 @@ const Schedule: React.FC = () => {
     setOpenForm(true);
   };
 
+  // Context menu handlers
+  const handleOpenContextMenu = (event: React.MouseEvent, schedule: LessonSchedule) => {
+    event.preventDefault();
+    setContextMenu({ mouseX: event.clientX - 2, mouseY: event.clientY - 4, schedule });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  const handleContextEdit = () => {
+    if (contextMenu?.schedule) {
+      handleEditLesson(contextMenu.schedule);
+    }
+    handleCloseContextMenu();
+  };
+
+  const handleContextDelete = async () => {
+    if (contextMenu?.schedule?.id != null) {
+      await handleDeleteLesson(contextMenu.schedule.id);
+    }
+    handleCloseContextMenu();
+  };
+
   const handleDeleteLesson = async (id: number) => {
     if (window.confirm('Bu dersi silmek istediğinizden emin misiniz?')) {
       try {
@@ -516,7 +551,7 @@ const Schedule: React.FC = () => {
                                   border: currentStatus ? `2px solid ${statusColor}` : '1px solid transparent',
                                   opacity: 1,
                                   position: 'relative',
-                                }}>
+                                }} onContextMenu={(e) => handleOpenContextMenu(e, scheduleForThisTime)}>
                                   <CardContent sx={{ p: 0.3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', '&:last-child': { pb: 0.3 } }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flex: 1 }}>
                                       {currentStatus && (
@@ -688,6 +723,26 @@ const Schedule: React.FC = () => {
           <Button variant="contained" onClick={confirmStatusChange} disabled={!statusDialog.selected}>Kaydet</Button>
         </DialogActions>
       </Dialog>
+      {/* Lesson Card Context Menu */}
+      <Menu
+        open={Boolean(contextMenu)}
+        onClose={handleCloseContextMenu}
+        anchorReference="anchorPosition"
+        anchorPosition={contextMenu ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined}
+      >
+        <MenuItem onClick={handleContextEdit}>
+          <ListItemIcon>
+            <EditScheduleIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Dersi Düzenle" />
+        </MenuItem>
+        <MenuItem onClick={handleContextDelete}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Sil" />
+        </MenuItem>
+      </Menu>
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
