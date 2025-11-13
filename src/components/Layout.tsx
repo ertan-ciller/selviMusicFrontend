@@ -21,8 +21,10 @@ import {
   CalendarToday as CalendarIcon,
   Category as CategoryIcon,
   Insights as InsightsIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { authAPI } from '../services/api';
 import selviLogo from '../selviSanatLogo.jpeg';
 
 const drawerWidth = 240;
@@ -39,6 +41,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Hide app chrome on login page
+  if (location.pathname === '/login') {
+    return <Box sx={{ width: '100%', minHeight: '100vh' }}>{children}</Box>;
+  }
 
   const menuItems = [
     { text: 'Ders programı', icon: <CalendarIcon />, path: '/schedule' },
@@ -60,6 +67,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate(path);
     if (isMobile) {
       setMobileOpen(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (_) {
+      // ignore
+    } finally {
+      navigate('/login', { replace: true });
+      if (isMobile) {
+        setMobileOpen(false);
+      }
     }
   };
 
@@ -115,6 +135,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </ListItemButton>
           </ListItem>
         ))}
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={handleLogout}
+            sx={{ justifyContent: { md: desktopOpen ? 'initial' : 'center' } }}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: { md: desktopOpen ? 40 : 0 },
+                mr: { md: desktopOpen ? 2 : 'auto' },
+                justifyContent: 'center',
+              }}
+            >
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Çıkış"
+              sx={{ display: { md: desktopOpen ? 'block' : 'none' } }}
+            />
+          </ListItemButton>
+        </ListItem>
       </List>
     </Box>
   );

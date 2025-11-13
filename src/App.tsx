@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box } from '@mui/material';
 import Layout from './components/Layout';
 import { Navigate } from 'react-router-dom';
+import RequireAuth from './components/RequireAuth';
 import Teachers from './pages/Teachers';
 import Students from './pages/Students';
 import TeacherForm from './pages/TeacherForm';
@@ -14,6 +15,7 @@ import LessonTypes from './pages/LessonTypes';
 import LessonTypeForm from './pages/LessonTypeForm';
 import LessonAnalytics from './pages/LessonAnalytics';
 import Schedule from './pages/Schedule';
+import Login from './pages/Login';
 
 const theme = createTheme({
   palette: {
@@ -69,19 +71,20 @@ function App() {
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
           <Layout>
             <Routes>
+              <Route path="/login" element={<Login />} />
               <Route path="/" element={<Navigate to="/schedule" replace />} />
-              <Route path="/teachers" element={<Teachers />} />
-              <Route path="/teachers/new" element={<TeacherForm />} />
-              <Route path="/teachers/edit/:id" element={<TeacherForm />} />
-              <Route path="/teachers/:id" element={<TeacherDetail />} />
-              <Route path="/students" element={<Students />} />
-              <Route path="/students/new" element={<StudentForm />} />
-              <Route path="/students/edit/:id" element={<StudentForm />} />
-              <Route path="/students/:id" element={<StudentDetail />} />
-              <Route path="/lesson-types" element={<LessonTypes />} />
-              <Route path="/lesson-types/new" element={<LessonTypeForm />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/lesson-analytics" element={<LessonAnalytics />} />
+              <Route path="/teachers" element={<RequireAuth><Teachers /></RequireAuth>} />
+              <Route path="/teachers/new" element={<RequireAuth><TeacherForm /></RequireAuth>} />
+              <Route path="/teachers/edit/:id" element={<RequireAuth><TeacherForm /></RequireAuth>} />
+              <Route path="/teachers/:id" element={<RequireAuth><TeacherDetail /></RequireAuth>} />
+              <Route path="/students" element={<RequireAuth><Students /></RequireAuth>} />
+              <Route path="/students/new" element={<RequireAuth><StudentForm /></RequireAuth>} />
+              <Route path="/students/edit/:id" element={<RequireAuth><StudentForm /></RequireAuth>} />
+              <Route path="/students/:id" element={<RequireAuth><StudentDetail /></RequireAuth>} />
+              <Route path="/lesson-types" element={<RequireAuth><LessonTypes /></RequireAuth>} />
+              <Route path="/lesson-types/new" element={<RequireAuth><LessonTypeForm /></RequireAuth>} />
+              <Route path="/schedule" element={<RequireAuth><Schedule /></RequireAuth>} />
+              <Route path="/lesson-analytics" element={<RequireAuth><LessonAnalytics /></RequireAuth>} />
             </Routes>
           </Layout>
         </Box>

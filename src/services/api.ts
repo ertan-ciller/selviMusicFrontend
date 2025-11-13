@@ -7,7 +7,10 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
+
+// Cookies (HttpOnly) will be sent automatically; no Authorization header injection
 
 // Global response error interceptor: extract backend message and propagate
 api.interceptors.response.use(
@@ -521,6 +524,14 @@ export interface Classroom {
 
 export const classroomAPI = {
   getAll: () => api.get<Classroom[]>('/classrooms'),
+};
+
+// Auth API
+export const authAPI = {
+  login: (username: string, password: string) =>
+    api.post<{ token: string }>('/auth/login', { username, password }),
+  me: () => api.get('/auth/me'),
+  logout: () => api.post('/auth/logout'),
 };
 
 export default api; 
